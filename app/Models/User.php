@@ -42,4 +42,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Relasi ke companies (many-to-many via company_users).
+     */
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class, 'company_users')
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
 }
