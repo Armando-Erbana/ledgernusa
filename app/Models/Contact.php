@@ -4,11 +4,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Role extends Model
+class Contact extends Model
 {
     use HasFactory;
-    protected $fillable = ['company_id', 'name', 'description'];
+    protected $fillable = ['company_id','type','name','npwp','email','phone','address','is_active'];
+    protected $casts = ['is_active' => 'boolean'];
 
     public function company() { return $this->belongsTo(Company::class); }
-    public function permissions() { return $this->belongsToMany(Permission::class, 'role_permissions'); }
 }
