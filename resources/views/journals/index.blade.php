@@ -2,53 +2,56 @@
 @section('title', 'Jurnal Umum')
 @section('content')
 
-<div class="flex justify-between items-center mb-4">
-    <h1 class="text-xl font-bold">Jurnal Umum</h1>
-    <a href="{{ route('journals.create') }}" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">+ Jurnal</a>
+<div class="ln-page-head">
+    <div>
+        <h1 class="ln-page-title">Jurnal Umum</h1>
+        <p class="ln-page-sub">Semua transaksi jurnal yang tercatat</p>
+    </div>
+    <a href="{{ route('journals.create') }}" class="ln-btn-primary">+ Jurnal</a>
 </div>
 
-<div class="bg-white rounded shadow overflow-x-auto">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-600">
+<div class="ln-table-card">
+    <table class="ln-table">
+        <thead>
             <tr>
-                <th class="px-3 py-2 text-left">Tanggal</th>
-                <th class="px-3 py-2 text-left">Ref</th>
-                <th class="px-3 py-2 text-left">Deskripsi</th>
-                <th class="px-3 py-2 text-right">Total</th>
-                <th class="px-3 py-2 text-center">Status</th>
-                <th class="px-3 py-2 text-center">Aksi</th>
+                <th>Tanggal</th>
+                <th>Ref</th>
+                <th>Deskripsi</th>
+                <th class="num">Total</th>
+                <th class="center">Status</th>
+                <th class="center">Aksi</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($journals as $j)
-                <tr class="border-t">
-                    <td class="px-3 py-2 whitespace-nowrap">{{ $j->date->format('d/m/Y') }}</td>
-                    <td class="px-3 py-2">{{ $j->reference }}</td>
-                    <td class="px-3 py-2 text-gray-600">{{ \Illuminate\Support\Str::limit($j->description, 40) }}</td>
-                    <td class="px-3 py-2 text-right whitespace-nowrap">Rp {{ number_format($j->totalDebit(), 0, ',', '.') }}</td>
-                    <td class="px-3 py-2 text-center">
-                        <span class="text-xs px-2 py-1 rounded {{ $j->status === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                            {{ $j->status }}
-                        </span>
-                    </td>
-                    <td class="px-3 py-2 text-center whitespace-nowrap">
-                        <a href="{{ route('journals.show', $j) }}" class="text-indigo-600 text-xs">Lihat</a>
-                        @if($j->status !== 'posted')
-                            <a href="{{ route('journals.edit', $j) }}" class="text-indigo-600 text-xs ml-2">Edit</a>
-                            <form method="POST" action="{{ route('journals.post', $j) }}" class="inline">
-                                @csrf
-                                <button class="text-green-700 text-xs ml-2">Posting</button>
-                            </form>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="6" class="px-3 py-6 text-center text-gray-400">Belum ada jurnal</td></tr>
-            @endforelse
+        @forelse($journals as $j)
+            <tr>
+                <td class="whitespace-nowrap">{{ $j->date->format('d/m/Y') }}</td>
+                <td>{{ $j->reference }}</td>
+                <td style="color: var(--ln-ink-soft);">{{ \Illuminate\Support\Str::limit($j->description, 40) }}</td>
+                <td class="num whitespace-nowrap">Rp {{ number_format($j->totalDebit(), 0, ',', '.') }}</td>
+                <td class="center">
+                    <span class="ln-badge {{ $j->status === 'posted' ? 'posted' : 'draft' }}">{{ $j->status }}</span>
+                </td>
+                <td class="center whitespace-nowrap">
+                    <a href="{{ route('journals.show', $j) }}" class="ln-action">Lihat</a>
+                    @if($j->status !== 'posted')
+                        <span class="ln-action-sep">·</span>
+                        <a href="{{ route('journals.edit', $j) }}" class="ln-action">Edit</a>
+                        <span class="ln-action-sep">·</span>
+                        <form method="POST" action="{{ route('journals.post', $j) }}" class="inline">
+                            @csrf
+                            <button class="ln-action green">Posting</button>
+                        </form>
+                    @endif
+                </td>
+            </tr>
+        @empty
+            <tr><td colspan="6" class="empty">Belum ada jurnal</td></tr>
+        @endforelse
         </tbody>
     </table>
 </div>
 
-<div class="mt-4">{{ $journals->links() }}</div>
+<div class="ln-pagination">{{ $journals->links() }}</div>
 
 @endsection

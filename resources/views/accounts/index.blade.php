@@ -2,39 +2,43 @@
 @section('title', 'COA')
 @section('content')
 
-<div class="flex justify-between items-center mb-4">
-    <h1 class="text-xl font-bold">Chart of Accounts</h1>
-    <a href="{{ route('accounts.create') }}" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">+ Akun</a>
+<div class="ln-page-head">
+    <div>
+        <h1 class="ln-page-title">Chart of Accounts</h1>
+        <p class="ln-page-sub">Daftar akun dan saldo berjalan</p>
+    </div>
+    <a href="{{ route('accounts.create') }}" class="ln-btn-primary">+ Akun</a>
 </div>
 
-<div class="bg-white rounded shadow overflow-x-auto">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-600">
+<div class="ln-table-card">
+    <table class="ln-table">
+        <thead>
             <tr>
-                <th class="px-3 py-2 text-left">Kode</th>
-                <th class="px-3 py-2 text-left">Nama</th>
-                <th class="px-3 py-2 text-left">Tipe</th>
-                <th class="px-3 py-2 text-right">Saldo</th>
-                <th class="px-3 py-2 text-center">Aksi</th>
+                <th>Kode</th>
+                <th>Nama</th>
+                <th>Tipe</th>
+                <th class="num">Saldo</th>
+                <th class="center">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @forelse($accounts as $a)
-                <tr class="border-t">
-                    <td class="px-3 py-2 font-mono">{{ $a->code }}</td>
-                    <td class="px-3 py-2">{{ $a->name }}</td>
-                    <td class="px-3 py-2 capitalize text-xs">{{ $a->type }}</td>
-                    <td class="px-3 py-2 text-right">Rp {{ number_format($a->balance, 0, ',', '.') }}</td>
-                    <td class="px-3 py-2 text-center whitespace-nowrap">
-                        <a href="{{ route('accounts.edit', $a) }}" class="text-indigo-600 text-xs">Edit</a>
+                <tr>
+                    <td class="ln-code">{{ $a->code }}</td>
+                    <td>{{ $a->name }}</td>
+                    <td><span class="ln-type {{ strtolower($a->type) }}">{{ $a->type }}</span></td>
+                    <td class="num">Rp {{ number_format($a->balance, 0, ',', '.') }}</td>
+                    <td class="center whitespace-nowrap">
+                        <a href="{{ route('accounts.edit', $a) }}" class="ln-action">Edit</a>
+                        <span class="ln-action-sep">·</span>
                         <form method="POST" action="{{ route('accounts.destroy', $a) }}" class="inline" onsubmit="return confirm('Hapus?')">
                             @csrf @method('DELETE')
-                            <button class="text-red-600 text-xs ml-2">Hapus</button>
+                            <button class="ln-action red">Hapus</button>
                         </form>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="px-3 py-6 text-center text-gray-400">Belum ada akun</td></tr>
+                <tr><td colspan="5" class="empty">Belum ada akun</td></tr>
             @endforelse
         </tbody>
     </table>

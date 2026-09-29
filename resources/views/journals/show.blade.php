@@ -14,9 +14,7 @@
         <div class="col-span-2"><span class="text-gray-500">Deskripsi:</span> {{ $journal->description ?: '-' }}</div>
         <div>
             <span class="text-gray-500">Status:</span>
-            <span class="text-xs px-2 py-1 rounded {{ $journal->status === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                {{ $journal->status }}
-            </span>
+            <span class="text-xs px-2 py-1 rounded {{ $journal->status === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ $journal->status }}</span>
         </div>
     </div>
 </div>
@@ -31,13 +29,13 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($journal->entries as $e)
-                <tr class="border-t">
-                    <td class="px-3 py-2">{{ $e->account->code }} - {{ $e->account->name }}</td>
-                    <td class="px-3 py-2 text-right">{{ $e->debit > 0 ? number_format($e->debit, 2, ',', '.') : '-' }}</td>
-                    <td class="px-3 py-2 text-right">{{ $e->credit > 0 ? number_format($e->credit, 2, ',', '.') : '-' }}</td>
-                </tr>
-            @endforeach
+        @foreach($journal->entries as $e)
+            <tr class="border-t">
+                <td class="px-3 py-2">{{ $e->account->code }} - {{ $e->account->name }}</td>
+                <td class="px-3 py-2 text-right">{{ $e->debit > 0 ? number_format($e->debit, 2, ',', '.') : '-' }}</td>
+                <td class="px-3 py-2 text-right">{{ $e->credit > 0 ? number_format($e->credit, 2, ',', '.') : '-' }}</td>
+            </tr>
+        @endforeach
         </tbody>
         <tfoot class="bg-gray-50 font-semibold">
             <tr>

@@ -2,62 +2,79 @@
 @section('title', 'Dashboard')
 @section('content')
 
-<h1 class="text-xl font-bold mb-4">Dashboard</h1>
-
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-    <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-gray-500">Saldo Kas</div>
-        <div class="text-lg font-bold text-green-700">Rp {{ number_format($totalKas, 0, ',', '.') }}</div>
-    </div>
-    <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-gray-500">Saldo Bank</div>
-        <div class="text-lg font-bold text-blue-700">Rp {{ number_format($totalBank, 0, ',', '.') }}</div>
-    </div>
-    <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-gray-500">Total Akun</div>
-        <div class="text-lg font-bold">{{ \App\Models\Account::where('company_id', session('company_id'))->count() }}</div>
-    </div>
-    <div class="bg-white p-4 rounded shadow">
-        <div class="text-xs text-gray-500">Total Jurnal</div>
-        <div class="text-lg font-bold">{{ \App\Models\Journal::where('company_id', session('company_id'))->count() }}</div>
+<div class="ln-page-head">
+    <div>
+        <h1 class="ln-page-title">Dashboard</h1>
+        <p class="ln-page-sub">Ringkasan keuangan {{ auth()->user()->activeCompany()->name ?? 'perusahaan Anda' }}</p>
     </div>
 </div>
 
-<div class="flex flex-wrap gap-2 mb-6">
-    <a href="{{ route('journals.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">+ Jurnal Baru</a>
-    <a href="{{ route('accounts.create') }}" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">+ Akun COA</a>
-    <a href="{{ route('contacts.create') }}" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">+ Kontak</a>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+    <div class="ln-stat kas">
+        <div class="top">
+            <span class="lbl">Saldo Kas</span>
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.4"/></svg></span>
+        </div>
+        <div class="val">Rp {{ number_format($totalKas, 0, ',', '.') }}</div>
+    </div>
+    <div class="ln-stat bank">
+        <div class="top">
+            <span class="lbl">Saldo Bank</span>
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/></svg></span>
+        </div>
+        <div class="val">Rp {{ number_format($totalBank, 0, ',', '.') }}</div>
+    </div>
+    <div class="ln-stat akun">
+        <div class="top">
+            <span class="lbl">Total Akun</span>
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>
+        </div>
+        <div class="val">{{ \App\Models\Account::where('company_id', session('company_id'))->count() }}</div>
+    </div>
+    <div class="ln-stat jurnal">
+        <div class="top">
+            <span class="lbl">Total Jurnal</span>
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/></svg></span>
+        </div>
+        <div class="val">{{ \App\Models\Journal::where('company_id', session('company_id'))->count() }}</div>
+    </div>
 </div>
 
-<h2 class="text-lg font-semibold mb-2">Jurnal Terbaru</h2>
-<div class="bg-white rounded shadow overflow-hidden">
-    <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-600">
+<div class="flex flex-wrap gap-2 mb-9">
+    <a href="{{ route('journals.create') }}" class="ln-btn-primary">+ Jurnal Baru</a>
+    <a href="{{ route('accounts.create') }}" class="ln-btn-outline">+ Akun COA</a>
+    <a href="{{ route('contacts.create') }}" class="ln-btn-outline">+ Kontak</a>
+</div>
+
+<h2 class="ln-section-title">Jurnal Terbaru</h2>
+<div class="ln-table-card">
+    <table class="ln-table">
+        <thead>
             <tr>
-                <th class="px-3 py-2 text-left">Tanggal</th>
-                <th class="px-3 py-2 text-left">Referensi</th>
-                <th class="px-3 py-2 text-right">Total</th>
-                <th class="px-3 py-2 text-center">Status</th>
+                <th>Tanggal</th>
+                <th>Referensi</th>
+                <th class="num">Total</th>
+                <th class="center">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($recentJournals as $j)
-                <tr class="border-t">
-                    <td class="px-3 py-2">{{ $j->date->format('d/m/Y') }}</td>
-                    <td class="px-3 py-2">
-                        <a href="{{ route('journals.show', $j) }}" class="text-indigo-600 hover:underline">
+                <tr>
+                    <td>{{ $j->date->format('d/m/Y') }}</td>
+                    <td>
+                        <a href="{{ route('journals.show', $j) }}" class="ref">
                             {{ $j->reference ?: '#' . $j->id }}
                         </a>
                     </td>
-                    <td class="px-3 py-2 text-right">Rp {{ number_format($j->totalDebit(), 0, ',', '.') }}</td>
-                    <td class="px-3 py-2 text-center">
-                        <span class="px-2 py-1 text-xs rounded {{ $j->status === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                    <td class="num">Rp {{ number_format($j->totalDebit(), 0, ',', '.') }}</td>
+                    <td class="center">
+                        <span class="ln-badge {{ $j->status === 'posted' ? 'posted' : 'draft' }}">
                             {{ $j->status }}
                         </span>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="4" class="px-3 py-6 text-center text-gray-400">Belum ada jurnal</td></tr>
+                <tr><td colspan="4" class="empty">Belum ada jurnal</td></tr>
             @endforelse
         </tbody>
     </table>

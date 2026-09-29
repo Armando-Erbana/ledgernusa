@@ -2,23 +2,28 @@
 @section('title', 'Akun Baru')
 @section('content')
 
-<h1 class="text-xl font-bold mb-4">Akun Baru</h1>
+<div class="ln-page-head">
+    <div>
+        <h1 class="ln-page-title">Akun Baru</h1>
+        <p class="ln-page-sub">Tambahkan akun baru ke chart of accounts</p>
+    </div>
+</div>
 
-<form method="POST" action="{{ route('accounts.store') }}" class="bg-white p-4 rounded shadow space-y-3">
+<form method="POST" action="{{ route('accounts.store') }}" class="ln-form-card space-y-4">
     @csrf
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 gap-4">
         <div>
-            <label class="block text-sm text-gray-600">Kode</label>
-            <input type="text" name="code" value="{{ old('code') }}" required class="w-full border rounded px-3 py-2">
+            <label class="ln-label">Kode</label>
+            <input type="text" name="code" value="{{ old('code') }}" required class="ln-input">
         </div>
         <div>
-            <label class="block text-sm text-gray-600">Nama</label>
-            <input type="text" name="name" value="{{ old('name') }}" required class="w-full border rounded px-3 py-2">
+            <label class="ln-label">Nama</label>
+            <input type="text" name="name" value="{{ old('name') }}" required class="ln-input">
         </div>
     </div>
     <div>
-        <label class="block text-sm text-gray-600">Tipe</label>
-        <select name="type" required class="w-full border rounded px-3 py-2">
+        <label class="ln-label">Tipe</label>
+        <select name="type" required class="ln-select">
             <option value="asset">Asset</option>
             <option value="liability">Liability</option>
             <option value="equity">Equity</option>
@@ -27,20 +32,22 @@
         </select>
     </div>
     <div>
-        <label class="block text-sm text-gray-600">Parent (opsional)</label>
-        <select name="parent_id" class="w-full border rounded px-3 py-2">
+        <label class="ln-label">Parent (opsional)</label>
+        <select name="parent_id" class="ln-select">
             <option value="">- Tidak ada -</option>
             @foreach($parents as $p)
                 <option value="{{ $p->id }}">{{ $p->code }} - {{ $p->name }}</option>
             @endforeach
         </select>
     </div>
-    <div class="flex gap-4">
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_cash" value="1"> Kas</label>
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_bank" value="1"> Bank</label>
+    <div class="flex gap-5">
+        <label class="ln-checkbox"><input type="checkbox" name="is_cash" value="1"> Kas</label>
+        <label class="ln-checkbox"><input type="checkbox" name="is_bank" value="1"> Bank</label>
     </div>
-    <button class="px-4 py-2 bg-indigo-600 text-white rounded">Simpan</button>
-    <a href="{{ route('accounts.index') }}" class="px-4 py-2 bg-gray-100 rounded">Batal</a>
+    <div class="ln-form-actions">
+        <button class="ln-btn-primary">Simpan</button>
+        <a href="{{ route('accounts.index') }}" class="ln-btn-cancel">Batal</a>
+    </div>
 </form>
 
 @endsection
