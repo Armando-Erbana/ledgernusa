@@ -17,4 +17,19 @@ class Company extends Model
     public function accounts() { return $this->hasMany(Account::class); }
     public function contacts() { return $this->hasMany(Contact::class); }
     public function journals() { return $this->hasMany(Journal::class); }
+
+    public function subscription()
+{
+    return $this->hasOne(Subscription::class)->latestOfMany();
+}
+
+public function subscriptions()
+{
+    return $this->hasMany(Subscription::class);
+}
+
+public function invoices()
+{
+    return $this->hasMany(Invoice::class);
+}
 }

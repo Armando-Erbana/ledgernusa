@@ -17,21 +17,37 @@ class CompanyController extends Controller
         return view('companies.create');
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'currency' => 'required|string|max:8',
-            'address' => 'nullable|string',
+   public function store(Request $request)
+{
+    $data = $request->validate([
+        'name' => 'required|string|max:255',
+        'currency' => 'required|string|max:8',
+        'address' => 'nullable|string',
+    ]);
+
+    $company = Company::create($data);
+    auth()->user()->companies()->attach($company->id, ['role' => 'owner']);
+
+    // Auto-create trial subscription (14 hari, paket pro)
+    $plan = \App\Models\Plan::where('code', 'pro')->first()
+         ?? \App\Models\Plan::first();
+
+    if ($plan) {
+        \App\Models\Subscription::create([
+            'company_id' => $company->id,
+            'plan_id' => $plan->id,
+            'status' => 'trial',
+            'billing_cycle' => 'monthly',
+            'trial_ends_at' => now()->addDays(14),
+            'starts_at' => now(),
+            'ends_at' => now()->addDays(14),
         ]);
-
-        $company = Company::create($data);
-        auth()->user()->companies()->attach($company->id, ['role' => 'owner']);
-
-        session(['company_id' => $company->id]);
-
-        return redirect()->route('dashboard')->with('success', 'Company berhasil dibuat');
     }
+
+    session(['company_id' => $company->id]);
+
+    return redirect()->route('dashboard')->with('success', 'Company berhasil dibuat. Trial 14 hari dimulai!');
+}
 
     public function switch($id)
     {

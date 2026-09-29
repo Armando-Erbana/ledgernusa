@@ -29,6 +29,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Super admin → langsung ke /super-admin
+        if (auth()->user()->isSuperAdmin()) {
+            return redirect()->intended('/super-admin');
+        }
+
+        // User biasa → ke dashboard
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
