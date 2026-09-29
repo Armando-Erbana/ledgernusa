@@ -11,6 +11,10 @@
 </div>
 
 <div class="ln-table-card">
+    <div class="flex gap-2">
+    <a href="{{ route('accounts.import') }}" class="px-3 py-2 bg-white border rounded text-sm">Import CSV</a>
+    <a href="{{ route('accounts.create') }}" class="px-3 py-2 bg-indigo-600 text-white rounded text-sm">+ Akun</a>
+</div>
     <table class="ln-table">
         <thead>
             <tr>

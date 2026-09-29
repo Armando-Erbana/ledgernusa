@@ -199,9 +199,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
         COA
     </a>
-    <a href="{{ route('contacts.index') }}" class="ln-navitem {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3 2.8-4.6 5.5-4.6s4.7 1.6 5.5 4.6"/><path d="M15.5 8.3a3 3 0 1 1 3.6 2.9"/><path d="M16 14.6c2.2.3 3.8 1.8 4.5 4.4"/></svg>
-        Kontak
+    <a href="{{ route('reports.index') }}" class="ln-navitem {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
+        Laporan
     </a>
     <a href="{{ route('companies.index') }}" class="ln-navitem {{ request()->routeIs('companies.*') ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2"/></svg>
