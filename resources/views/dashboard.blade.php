@@ -57,6 +57,19 @@
 .dz-btn.ghost{color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--line);backdrop-filter:blur(10px)}
 .dz-btn.ghost:hover{background:#fff;border-color:rgba(29,78,216,.35);color:var(--b1)}
 
+/* quick menu */
+.dz-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:30px}
+.dz-quick-item{display:flex;align-items:center;gap:12px;padding:14px 16px;text-decoration:none;border-radius:14px;
+    background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+    border:1px solid rgba(255,255,255,.75);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 8px 22px -14px rgba(15,30,61,.18),0 0 0 1px var(--line);
+    transition:.18s}
+.dz-quick-item:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 14px 28px -14px rgba(29,78,216,.28),0 0 0 1px rgba(29,78,216,.25)}
+.dz-quick-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;flex-shrink:0;
+    box-shadow:0 6px 14px -6px rgba(15,30,61,.4),inset 0 1px 0 rgba(255,255,255,.3)}
+.dz-quick-ico svg{width:20px;height:20px;stroke:currentColor}
+.dz-quick-item b{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.dz-quick-item small{font-size:11.5px;color:var(--mute)}
+
 /* table */
 .dz-sec{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:16px;font-weight:700;color:var(--ink)}
 .dz-sec::before{content:"";width:4px;height:16px;border-radius:4px;background:linear-gradient(180deg,var(--b1),var(--b2))}
@@ -134,12 +147,66 @@
         </div>
     </div>
 
+    {{-- Quick Actions --}}
     <div class="dz-actions">
-        <a href="{{ route('journals.index') }}" class="dz-btn pri">+ Jurnal Baru</a>
-        <a href="{{ route('accounts.index') }}" class="dz-btn ghost">+ Akun COA</a>
-        <a href="{{ route('contacts.index') }}" class="dz-btn ghost">+ Kontak</a>
+        <a href="{{ route('journals.create') }}" class="dz-btn pri">+ Jurnal Baru</a>
+        <a href="{{ route('cash.create', ['type' => 'in']) }}" class="dz-btn ghost">+ Kas Masuk</a>
+        <a href="{{ route('cash.create', ['type' => 'out']) }}" class="dz-btn ghost">− Kas Keluar</a>
+        <a href="{{ route('accounts.create') }}" class="dz-btn ghost">+ Akun COA</a>
+        <a href="{{ route('contacts.create') }}" class="dz-btn ghost">+ Kontak</a>
     </div>
 
+    {{-- Menu Cepat --}}
+    <h2 class="dz-sec">Menu Cepat</h2>
+    <div class="dz-quick">
+        <a href="{{ route('cash.index') }}" class="dz-quick-item">
+            <span class="dz-quick-ico" style="background:linear-gradient(135deg,#1E7A4C,#2FA36B);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/><path d="M6 6.5V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5"/></svg>
+            </span>
+            <span>
+                <b>Kas &amp; Bank</b>
+                <small>Catat transaksi kas</small>
+            </span>
+        </a>
+        <a href="{{ route('contacts.index') }}" class="dz-quick-item">
+            <span class="dz-quick-ico" style="background:linear-gradient(135deg,#B4915B,#D4A870);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3 2.8-4.6 5.5-4.6s4.7 1.6 5.5 4.6"/></svg>
+            </span>
+            <span>
+                <b>Kontak</b>
+                <small>Customer &amp; supplier</small>
+            </span>
+        </a>
+        <a href="{{ route('reports.index') }}" class="dz-quick-item">
+            <span class="dz-quick-ico" style="background:linear-gradient(135deg,#1C8FC4,#4FC3EC);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
+            </span>
+            <span>
+                <b>Laporan</b>
+                <small>Keuangan lengkap</small>
+            </span>
+        </a>
+        <a href="{{ route('subscription.index') }}" class="dz-quick-item">
+            <span class="dz-quick-ico" style="background:linear-gradient(135deg,#14213A,#1B2C4B);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>
+            </span>
+            <span>
+                <b>Langganan</b>
+                <small>Paket &amp; tagihan</small>
+            </span>
+        </a>
+        <a href="{{ route('companies.index') }}" class="dz-quick-item">
+            <span class="dz-quick-ico" style="background:linear-gradient(135deg,#5B6577,#8B96A9);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2"/></svg>
+            </span>
+            <span>
+                <b>Setting</b>
+                <small>Company &amp; profil</small>
+            </span>
+        </a>
+    </div>
+
+    {{-- Jurnal Terbaru --}}
     <h2 class="dz-sec">Jurnal Terbaru</h2>
     <div class="dz-glass dz-card">
         <div class="dz-scroll">

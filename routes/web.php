@@ -68,6 +68,44 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
         ->middleware('role:owner,admin')
         ->name('journals.post');
 
+    // ============ Kas & Bank ============
+    Route::prefix('cash')->name('cash.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CashTransactionController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\CashTransactionController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\CashTransactionController::class, 'store'])->name('store');
+        Route::get('/{cash}', [\App\Http\Controllers\CashTransactionController::class, 'show'])->name('show');
+        Route::get('/{cash}/edit', [\App\Http\Controllers\CashTransactionController::class, 'edit'])->name('edit');
+        Route::put('/{cash}', [\App\Http\Controllers\CashTransactionController::class, 'update'])->name('update');
+        Route::delete('/{cash}', [\App\Http\Controllers\CashTransactionController::class, 'destroy'])->name('destroy');
+    });
+
+    // ============ Transfer Antar Akun ============
+    Route::prefix('transfers')->name('transfers.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TransferController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\TransferController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\TransferController::class, 'store'])->name('store');
+        Route::get('/{transfer}', [\App\Http\Controllers\TransferController::class, 'show'])->name('show');
+        Route::get('/{transfer}/edit', [\App\Http\Controllers\TransferController::class, 'edit'])->name('edit');
+        Route::put('/{transfer}', [\App\Http\Controllers\TransferController::class, 'update'])->name('update');
+        Route::delete('/{transfer}', [\App\Http\Controllers\TransferController::class, 'destroy'])->name('destroy');
+    });
+
+    // ============ Customer ============
+    Route::resource('customers', \App\Http\Controllers\CustomerController::class);
+
+    // ============ Penjualan ============
+    Route::resource('sales', \App\Http\Controllers\SaleController::class);
+    Route::get('/sales/{sale}/payment', [\App\Http\Controllers\SalePaymentController::class, 'create'])->name('sales.payment.create');
+    Route::post('/sales/{sale}/payment', [\App\Http\Controllers\SalePaymentController::class, 'store'])->name('sales.payment.store');
+
+    // ============ Supplier ============
+    Route::resource('suppliers', \App\Http\Controllers\SupplierController::class);
+
+    // ============ Pembelian ============
+    Route::resource('purchases', \App\Http\Controllers\PurchaseController::class);
+    Route::get('/purchases/{purchase}/payment', [\App\Http\Controllers\PurchasePaymentController::class, 'create'])->name('purchases.payment.create');
+    Route::post('/purchases/{purchase}/payment', [\App\Http\Controllers\PurchasePaymentController::class, 'store'])->name('purchases.payment.store');
+
     // ============ Laporan ============
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
@@ -75,6 +113,25 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
         Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');
         Route::get('/income-statement', [ReportController::class, 'incomeStatement'])->name('income-statement');
         Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('balance-sheet');
+    });
+
+    // ============ Aset Tetap ============
+    Route::resource('fixed-assets', \App\Http\Controllers\FixedAssetController::class);
+    Route::post('/fixed-assets/{fixedAsset}/dispose', [\App\Http\Controllers\FixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
+
+    // Depresiasi (nama prefix fixed-assets.*)
+    Route::prefix('depreciations')->name('fixed-assets.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssetDepreciationController::class, 'index'])->name('depreciations');
+        Route::get('/run', [\App\Http\Controllers\AssetDepreciationController::class, 'form'])->name('depreciation-run');
+        Route::post('/run', [\App\Http\Controllers\AssetDepreciationController::class, 'run'])->name('depreciation-run.store');
+    });
+
+    // ============ Pajak ============
+    Route::prefix('tax')->name('tax.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TaxReportController::class, 'index'])->name('index');
+        Route::get('/ppn', [\App\Http\Controllers\TaxReportController::class, 'ppn'])->name('ppn');
+        Route::get('/pph23', [\App\Http\Controllers\TaxReportController::class, 'pph23'])->name('pph23');
+        Route::get('/summary', [\App\Http\Controllers\TaxReportController::class, 'summary'])->name('summary');
     });
 });
 
