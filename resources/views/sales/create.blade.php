@@ -54,21 +54,23 @@
             <table class="ln-entries-table">
                 <thead>
                     <tr>
+                        <th>Produk</th>
+                        <th>Gudang</th>
                         <th>Akun Pendapatan</th>
                         <th>Deskripsi</th>
-                        <th class="num" style="width:80px">Qty</th>
-                        <th class="num" style="width:130px">Harga</th>
-                        <th class="num" style="width:120px">Diskon</th>
-                        <th class="num" style="width:130px">Subtotal</th>
+                        <th class="num" style="width:70px">Qty</th>
+                        <th class="num" style="width:120px">Harga</th>
+                        <th class="num" style="width:100px">Diskon</th>
+                        <th class="num" style="width:120px">Subtotal</th>
                         <th style="width:40px"></th>
                     </tr>
                 </thead>
                 <tbody id="itemBody"></tbody>
                 <tfoot>
-                    <tr><td colspan="5" class="text-right">Subtotal</td><td class="text-right" id="fSubtotal">0</td><td></td></tr>
-                    <tr><td colspan="5" class="text-right">Diskon Invoice</td><td><input type="number" name="discount" id="fDiscount" value="{{ old('discount', 0) }}" min="0" step="0.01" class="ln-input ln-input-sm" style="text-align:right" oninput="calc()"></td><td></td></tr>
-                    <tr><td colspan="5" class="text-right">Pajak (PPN)</td><td><input type="number" name="tax" id="fTax" value="{{ old('tax', 0) }}" min="0" step="0.01" class="ln-input ln-input-sm" style="text-align:right" oninput="calc()"></td><td></td></tr>
-                    <tr style="background:#f0f4ff"><td colspan="5" class="text-right"><strong>Total</strong></td><td class="text-right"><strong id="fTotal">0</strong></td><td></td></tr>
+                    <tr><td colspan="7" class="text-right">Subtotal</td><td class="text-right" id="fSubtotal">0</td><td></td></tr>
+                    <tr><td colspan="7" class="text-right">Diskon Invoice</td><td><input type="number" name="discount" id="fDiscount" value="{{ old('discount', 0) }}" min="0" step="0.01" class="ln-input ln-input-sm" style="text-align:right" oninput="calc()"></td><td></td></tr>
+                    <tr><td colspan="7" class="text-right">Pajak (PPN)</td><td><input type="number" name="tax" id="fTax" value="{{ old('tax', 0) }}" min="0" step="0.01" class="ln-input ln-input-sm" style="text-align:right" oninput="calc()"></td><td></td></tr>
+                    <tr style="background:#f0f4ff"><td colspan="7" class="text-right"><strong>Total</strong></td><td class="text-right"><strong id="fTotal">0</strong></td><td></td></tr>
                 </tfoot>
             </table>
         </div>
@@ -88,11 +90,24 @@
 
 <script>
 const revenueAccounts = @json($revenueAccounts->map(fn($a) => ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name]));
+const products = @json(\App\Models\Product::where('company_id', session('company_id'))->where('is_active', true)->get(['id','code','name','sell_price']));
+const warehouses = @json(\App\Models\Warehouse::where('company_id', session('company_id'))->where('is_active', true)->get(['id','name','is_default']));
 const body = document.getElementById('itemBody');
 
 function addRow() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
+        <td>
+            <select name="items[][product_id]" class="ln-select ln-input-sm product-select" onchange="onProductChange(this)">
+                <option value="">- Non Produk -</option>
+                ${products.map(p => `<option value="${p.id}" data-price="${p.sell_price}">${p.code} - ${p.name}</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <select name="items[][warehouse_id]" class="ln-select ln-input-sm">
+                ${warehouses.map(w => `<option value="${w.id}" ${w.is_default ? 'selected' : ''}>${w.name}</option>`).join('')}
+            </select>
+        </td>
         <td>
             <select name="items[][account_id]" class="ln-select ln-input-sm" required>
                 <option value="">- Pilih Akun -</option>
@@ -108,6 +123,19 @@ function addRow() {
     `;
     body.appendChild(tr);
     calc();
+}
+
+function onProductChange(select) {
+    const tr = select.closest('tr');
+    const option = select.options[select.selectedIndex];
+    const price = option.dataset.price;
+    if (price && parseFloat(price) > 0) {
+        tr.querySelector('.price').value = price;
+        const name = option.text.split(' - ').slice(1).join(' - ');
+        const descInput = tr.querySelector('input[name="items[][description]"]');
+        if (descInput && !descInput.value) descInput.value = name;
+        calc();
+    }
 }
 
 function fmt(n) { return n.toLocaleString('id-ID'); }

@@ -3,6 +3,9 @@
 @section('content')
 
 <h1 class="text-xl font-bold mb-4">Neraca</h1>
+<a href="{{ route('export.balance-sheet-pdf', ['as_of' => $asOf]) }}" target="_blank" class="ln-btn-outline">
+    📄 Export PDF
+</a>
 
 <form method="GET" class="bg-white p-4 rounded shadow mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>

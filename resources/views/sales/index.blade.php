@@ -9,7 +9,7 @@
     </div>
     <a href="{{ route('sales.create') }}" class="ln-btn-primary">+ Invoice</a>
 </div>
-
+<a href="{{ route('export.sales-excel', ['from' => request('from'), 'to' => request('to')]) }}" class="ln-btn-outline">Export CSV</a>
 <form method="GET" class="ln-form-card mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
     <div>
         <label class="ln-label">Status</label>

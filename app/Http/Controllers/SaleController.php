@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\Product;
 use App\Models\Sale;
-use App\Models\SaleItem;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,8 @@ class SaleController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.account_id' => 'required|exists:accounts,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
             'items.*.description' => 'required|string|max:255',
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
@@ -74,16 +77,43 @@ class SaleController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
+            $stockService = new StockService();
+
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
+                $product = !empty($item['product_id']) ? Product::find($item['product_id']) : null;
+                $costPrice = $product ? (float) $product->cost_price : 0;
+                $totalCost = $item['qty'] * $costPrice;
+
                 $sale->items()->create([
+                    'product_id' => $item['product_id'] ?? null,
+                    'warehouse_id' => $item['warehouse_id'] ?? null,
                     'account_id' => $item['account_id'],
                     'description' => $item['description'],
                     'qty' => $item['qty'],
                     'price' => $item['price'],
                     'discount' => $item['discount'] ?? 0,
                     'subtotal' => $itemSubtotal,
+                    'cost_price' => $costPrice,
+                    'total_cost' => $totalCost,
                 ]);
+
+                // Kurangi stok kalau ada produk
+                if ($product && $product->track_stock && !empty($item['warehouse_id'])) {
+                    $stockService->stockOut(
+                        $product->id,
+                        $item['warehouse_id'],
+                        $item['qty'],
+                        [
+                            'date' => $data['date'],
+                            'type' => 'out',
+                            'reference' => $data['invoice_number'],
+                            'description' => 'Penjualan ' . $data['invoice_number'],
+                            'source_type' => 'sale',
+                            'source_id' => $sale->id,
+                        ]
+                    );
+                }
             }
 
             $journal = $sale->generateJournal();
@@ -95,7 +125,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale)
     {
-        $sale->load(['customer', 'items.account', 'payments.cashAccount', 'journal.entries.account']);
+        $sale->load(['customer', 'items.account', 'items.product', 'payments.cashAccount', 'journal.entries.account']);
         return view('sales.show', compact('sale'));
     }
 
@@ -121,6 +151,8 @@ class SaleController extends Controller
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.account_id' => 'required|exists:accounts,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
             'items.*.description' => 'required|string|max:255',
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
@@ -136,12 +168,39 @@ class SaleController extends Controller
         $total = $subtotal - $discount + $tax;
 
         DB::transaction(function () use ($sale, $data, $subtotal, $discount, $tax, $total) {
+            $stockService = new StockService();
+
+            // Kembalikan stok lama sebelum update
+            foreach ($sale->items as $oldItem) {
+                if ($oldItem->product_id && $oldItem->warehouse_id) {
+                    $product = Product::find($oldItem->product_id);
+                    if ($product && $product->track_stock) {
+                        $stockService->stockIn(
+                            $product->id,
+                            $oldItem->warehouse_id,
+                            $oldItem->qty,
+                            $oldItem->cost_price,
+                            [
+                                'date' => now(),
+                                'type' => 'in',
+                                'reference' => 'CANCEL-' . $sale->invoice_number,
+                                'description' => 'Koreksi edit invoice',
+                                'source_type' => 'sale_edit_cancel',
+                                'source_id' => $sale->id,
+                            ]
+                        );
+                    }
+                }
+            }
+
+            // Hapus jurnal & item lama
             if ($sale->journal) {
                 $sale->journal->entries()->delete();
                 $sale->journal->delete();
             }
             $sale->items()->delete();
 
+            // Update sale
             $sale->update([
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -153,18 +212,44 @@ class SaleController extends Controller
                 'notes' => $data['notes'] ?? null,
             ]);
 
+            // Buat item baru + kurangi stok
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
+                $product = !empty($item['product_id']) ? Product::find($item['product_id']) : null;
+                $costPrice = $product ? (float) $product->cost_price : 0;
+                $totalCost = $item['qty'] * $costPrice;
+
                 $sale->items()->create([
+                    'product_id' => $item['product_id'] ?? null,
+                    'warehouse_id' => $item['warehouse_id'] ?? null,
                     'account_id' => $item['account_id'],
                     'description' => $item['description'],
                     'qty' => $item['qty'],
                     'price' => $item['price'],
                     'discount' => $item['discount'] ?? 0,
                     'subtotal' => $itemSubtotal,
+                    'cost_price' => $costPrice,
+                    'total_cost' => $totalCost,
                 ]);
+
+                if ($product && $product->track_stock && !empty($item['warehouse_id'])) {
+                    $stockService->stockOut(
+                        $product->id,
+                        $item['warehouse_id'],
+                        $item['qty'],
+                        [
+                            'date' => $data['date'],
+                            'type' => 'out',
+                            'reference' => $sale->invoice_number,
+                            'description' => 'Penjualan ' . $sale->invoice_number,
+                            'source_type' => 'sale',
+                            'source_id' => $sale->id,
+                        ]
+                    );
+                }
             }
 
+            // Regenerate jurnal
             $journal = $sale->generateJournal();
             $sale->update(['journal_id' => $journal->id]);
         });
@@ -177,7 +262,33 @@ class SaleController extends Controller
         if ($sale->paid_amount > 0) {
             return back()->with('error', 'Invoice sudah ada pembayaran, tidak bisa dihapus.');
         }
+
         DB::transaction(function () use ($sale) {
+            $stockService = new StockService();
+
+            // Kembalikan stok sebelum hapus
+            foreach ($sale->items as $oldItem) {
+                if ($oldItem->product_id && $oldItem->warehouse_id) {
+                    $product = Product::find($oldItem->product_id);
+                    if ($product && $product->track_stock) {
+                        $stockService->stockIn(
+                            $product->id,
+                            $oldItem->warehouse_id,
+                            $oldItem->qty,
+                            $oldItem->cost_price,
+                            [
+                                'date' => now(),
+                                'type' => 'in',
+                                'reference' => 'CANCEL-' . $sale->invoice_number,
+                                'description' => 'Koreksi hapus invoice',
+                                'source_type' => 'sale_delete_cancel',
+                                'source_id' => $sale->id,
+                            ]
+                        );
+                    }
+                }
+            }
+
             if ($sale->journal) {
                 $sale->journal->entries()->delete();
                 $sale->journal->delete();
@@ -185,6 +296,7 @@ class SaleController extends Controller
             $sale->items()->delete();
             $sale->delete();
         });
+
         return redirect()->route('sales.index')->with('success', 'Invoice dihapus.');
     }
 }

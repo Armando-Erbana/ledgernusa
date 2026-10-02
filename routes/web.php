@@ -35,6 +35,21 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::resource('warehouses', \App\Http\Controllers\WarehouseController::class)->except(['create', 'show', 'edit']);
     Route::resource('stock', \App\Http\Controllers\StockMovementController::class)->except(['show', 'edit', 'update']);
 
+        Route::prefix('reports')->name('reports.')->group(function () {
+        // ... route yang sudah ada
+        Route::get('/aging-piutang', [\App\Http\Controllers\AgingReportController::class, 'piutang'])->name('aging-piutang');
+        Route::get('/aging-hutang', [\App\Http\Controllers\AgingReportController::class, 'hutang'])->name('aging-hutang');
+    });
+
+        // Export
+    Route::prefix('export')->name('export.')->group(function () {
+        Route::get('/income-statement-pdf', [\App\Http\Controllers\ExportController::class, 'incomeStatementPdf'])->name('income-statement-pdf');
+        Route::get('/balance-sheet-pdf', [\App\Http\Controllers\ExportController::class, 'balanceSheetPdf'])->name('balance-sheet-pdf');
+        Route::get('/trial-balance-pdf', [\App\Http\Controllers\ExportController::class, 'trialBalancePdf'])->name('trial-balance-pdf');
+        Route::get('/sales-excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])->name('sales-excel');
+        Route::get('/purchases-excel', [\App\Http\Controllers\ExportController::class, 'purchasesExcel'])->name('purchases-excel');
+    });
+    
     // Company
     Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');

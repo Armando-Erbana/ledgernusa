@@ -41,16 +41,18 @@
         <div class="overflow-x-auto">
             <table class="ln-entries-table">
                 <thead>
-                    <tr>
-                        <th>Akun (Beban/Persediaan)</th>
-                        <th>Deskripsi</th>
-                        <th class="num" style="width:80px">Qty</th>
-                        <th class="num" style="width:130px">Harga</th>
-                        <th class="num" style="width:120px">Diskon</th>
-                        <th class="num" style="width:130px">Subtotal</th>
-                        <th style="width:40px"></th>
-                    </tr>
-                </thead>
+    <tr>
+        <th>Produk</th>
+        <th>Gudang</th>
+        <th>Akun (Beban/Persediaan)</th>
+        <th>Deskripsi</th>
+        <th class="num" style="width:70px">Qty</th>
+        <th class="num" style="width:120px">Harga</th>
+        <th class="num" style="width:100px">Diskon</th>
+        <th class="num" style="width:120px">Subtotal</th>
+        <th style="width:40px"></th>
+    </tr>
+</thead>
                 <tbody id="itemBody"></tbody>
                 <tfoot>
                     <tr><td colspan="5" class="text-right">Subtotal</td><td class="text-right" id="fSubtotal">0</td><td></td></tr>

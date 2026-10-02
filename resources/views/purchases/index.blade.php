@@ -5,6 +5,7 @@
 <div class="ln-page-head">
     <div>
         <h1 class="ln-page-title">Pembelian</h1>
+        <a href="{{ route('export.sales-excel', ['from' => request('from'), 'to' => request('to')]) }}" class="ln-btn-outline">Export CSV</a>
         <p class="ln-page-sub">Daftar bill pembelian</p>
     </div>
     <a href="{{ route('purchases.create') }}" class="ln-btn-primary">+ Pembelian</a>

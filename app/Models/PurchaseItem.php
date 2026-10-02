@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseItem extends Model
 {
-    use HasFactory;
-    protected $fillable = ['purchase_id','account_id','description','qty','price','discount','subtotal'];
-    protected $casts = ['qty' => 'decimal:2','price' => 'decimal:2','discount' => 'decimal:2','subtotal' => 'decimal:2'];
+    protected $fillable = [
+    'purchase_id', 'product_id', 'warehouse_id', 'account_id', 'description',
+    'qty', 'price', 'discount', 'subtotal',
+];
 
-    public function purchase() { return $this->belongsTo(Purchase::class); }
-    public function account() { return $this->belongsTo(Account::class); }
+public function product() { return $this->belongsTo(Product::class); }
+public function warehouse() { return $this->belongsTo(Warehouse::class); }
 } 
