@@ -768,7 +768,38 @@
 
     <div class="ln-dropdown-divider"></div>
 
-    {{-- GRUP 2: AKUNTANSI --}}
+    {{-- GRUP 2: PERSEDIAAN --}}
+    <div class="ln-dropdown-header">Persediaan</div>
+    <div class="ln-dropdown-grid">
+        <a href="{{ route('products.index') }}" class="ln-dropdown-item {{ request()->routeIs('products.*','product-categories.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#F59E0B,#FBBF24);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            </span>
+            Produk
+        </a>
+        <a href="{{ route('stock.index') }}" class="ln-dropdown-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#10B981);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg>
+            </span>
+            Mutasi Stok
+        </a>
+        <a href="{{ route('warehouses.index') }}" class="ln-dropdown-item {{ request()->routeIs('warehouses.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0284C7,#38BDF8);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+            </span>
+            Gudang
+        </a>
+        <a href="{{ route('product-categories.index') }}" class="ln-dropdown-item {{ request()->routeIs('product-categories.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#9333EA,#C084FC);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            Kategori
+        </a>
+    </div>
+
+    <div class="ln-dropdown-divider"></div>
+
+    {{-- GRUP 3: AKUNTANSI --}}
     <div class="ln-dropdown-header">Akuntansi</div>
     <div class="ln-dropdown-grid">
         <a href="{{ route('fixed-assets.index') }}" class="ln-dropdown-item {{ request()->routeIs('fixed-assets.*') ? 'active' : '' }}">
@@ -799,7 +830,7 @@
 
     <div class="ln-dropdown-divider"></div>
 
-    {{-- GRUP 3: SISTEM --}}
+    {{-- GRUP 4: SISTEM --}}
     <div class="ln-dropdown-header">Sistem</div>
     <div class="ln-dropdown-grid">
         <a href="{{ route('companies.index') }}" class="ln-dropdown-item {{ request()->routeIs('companies.*') ? 'active' : '' }}">
@@ -847,7 +878,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
         Laporan
     </a>
-    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
+    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
         Lainnya
     </button>

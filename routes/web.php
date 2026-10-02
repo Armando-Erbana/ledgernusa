@@ -29,6 +29,11 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     // Subscription
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/expired', [SubscriptionController::class, 'expired'])->name('subscription.expired');
+        // ============ Persediaan ============
+    Route::resource('product-categories', \App\Http\Controllers\ProductCategoryController::class)->except(['create', 'show', 'edit']);
+    Route::resource('products', \App\Http\Controllers\ProductController::class);
+    Route::resource('warehouses', \App\Http\Controllers\WarehouseController::class)->except(['create', 'show', 'edit']);
+    Route::resource('stock', \App\Http\Controllers\StockMovementController::class)->except(['show', 'edit', 'update']);
 
     // Company
     Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
