@@ -60,7 +60,40 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+        // ============ Rekonsiliasi Bank ============
+    Route::prefix('bank-rec')->name('bank-rec.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BankReconciliationController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\BankReconciliationController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\BankReconciliationController::class, 'store'])->name('store');
+        Route::get('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'show'])->name('show');
+        Route::post('/{bankRec}/auto-match', [\App\Http\Controllers\BankReconciliationController::class, 'autoMatch'])->name('auto-match');
+        Route::post('/{bankRec}/lines/{line}/match', [\App\Http\Controllers\BankReconciliationController::class, 'matchLine'])->name('lines.match');
+        Route::post('/{bankRec}/lines/{line}/unmatch', [\App\Http\Controllers\BankReconciliationController::class, 'unmatchLine'])->name('lines.unmatch');
+        Route::post('/{bankRec}/lines/{line}/exclude', [\App\Http\Controllers\BankReconciliationController::class, 'excludeLine'])->name('lines.exclude');
+        Route::post('/{bankRec}/finalize', [\App\Http\Controllers\BankReconciliationController::class, 'finalize'])->name('finalize');
+        Route::delete('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'destroy'])->name('destroy');
+    });
+
+        // ============ Sales Order ============
+    Route::resource('sales-orders', \App\Http\Controllers\SalesOrderController::class);
+    Route::post('/sales-orders/{salesOrder}/confirm', [\App\Http\Controllers\SalesOrderController::class, 'confirm'])->name('sales-orders.confirm');
+
+    // ============ Delivery Order ============
+    Route::resource('delivery-orders', \App\Http\Controllers\DeliveryOrderController::class)->except(['edit', 'update']);
+    Route::post('/delivery-orders/{deliveryOrder}/deliver', [\App\Http\Controllers\DeliveryOrderController::class, 'deliver'])->name('delivery-orders.deliver');
+    Route::post('/delivery-orders/{deliveryOrder}/create-invoice', [\App\Http\Controllers\DeliveryOrderController::class, 'createInvoice'])->name('delivery-orders.create-invoice');
+
+        // ============ Purchase Order ============
+    Route::resource('purchase-orders', \App\Http\Controllers\PurchaseOrderController::class);
+    Route::post('/purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+
+    // ============ Goods Receipt ============
+    Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->except(['edit', 'update']);
+    Route::post('/goods-receipts/{goodsReceipt}/receive', [\App\Http\Controllers\GoodsReceiptController::class, 'receive'])->name('goods-receipts.receive');
+    Route::post('/goods-receipts/{goodsReceipt}/create-bill', [\App\Http\Controllers\GoodsReceiptController::class, 'createBill'])->name('goods-receipts.create-bill');
 });
+
 
 // =========================================================
 // GRUP 2: Auth + Active Company + Subscription check

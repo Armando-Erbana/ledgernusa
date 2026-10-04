@@ -734,17 +734,47 @@
             </span>
             Kas & Bank
         </a>
+        <a href="{{ route('bank-rec.index') }}" class="ln-dropdown-item {{ request()->routeIs('bank-rec.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0E7490,#06B6D4);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.91.37 4.16 1.03"/><path d="M16 5l5-3-1 5"/></svg>
+            </span>
+            Rekonsiliasi
+        </a>
         <a href="{{ route('transfers.index') }}" class="ln-dropdown-item {{ request()->routeIs('transfers.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#1C8FC4,#4FC3EC);">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/><path d="M10 6 4 12l6 6"/></svg>
             </span>
             Transfer
         </a>
+        <a href="{{ route('sales-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('sales-orders.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C3AED,#A855F7);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
+            </span>
+            Sales Order
+        </a>
+        <a href="{{ route('delivery-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('delivery-orders.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0891B2,#22D3EE);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </span>
+            Delivery
+        </a>
         <a href="{{ route('sales.index') }}" class="ln-dropdown-item {{ request()->routeIs('sales.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#B4915B,#D4A870);">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             </span>
             Penjualan
+        </a>
+        <a href="{{ route('purchase-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#BE123C,#FB7185);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
+            </span>
+            Purchase Order
+        </a>
+        <a href="{{ route('goods-receipts.index') }}" class="ln-dropdown-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#16A34A,#4ADE80);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </span>
+            Penerimaan
         </a>
         <a href="{{ route('purchases.index') }}" class="ln-dropdown-item {{ request()->routeIs('purchases.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#DC2626,#F87171);">
@@ -878,7 +908,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
         Laporan
     </a>
-    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
+    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
         Lainnya
     </button>
