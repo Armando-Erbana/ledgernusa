@@ -92,6 +92,15 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->except(['edit', 'update']);
     Route::post('/goods-receipts/{goodsReceipt}/receive', [\App\Http\Controllers\GoodsReceiptController::class, 'receive'])->name('goods-receipts.receive');
     Route::post('/goods-receipts/{goodsReceipt}/create-bill', [\App\Http\Controllers\GoodsReceiptController::class, 'createBill'])->name('goods-receipts.create-bill');
+
+        // ============ Karyawan ============
+    Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
+
+    // ============ Payroll ============
+    Route::resource('payrolls', \App\Http\Controllers\PayrollController::class)->except(['edit', 'update']);
+    Route::post('/payrolls/{payroll}/post', [\App\Http\Controllers\PayrollController::class, 'post'])->name('payrolls.post');
+    Route::post('/payrolls/{payroll}/mark-paid', [\App\Http\Controllers\PayrollController::class, 'markPaid'])->name('payrolls.mark-paid');
+    Route::get('/payrolls/{payroll}/items/{item}/slip', [\App\Http\Controllers\PayrollController::class, 'slipGaji'])->name('payrolls.slip');
 });
 
 

@@ -844,6 +844,18 @@
             </span>
             Pajak
         </a>
+        <a href="{{ route('employees.index') }}" class="ln-dropdown-item {{ request()->routeIs('employees.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#4338CA,#6366F1);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            Karyawan
+        </a>
+        <a href="{{ route('payrolls.index') }}" class="ln-dropdown-item {{ request()->routeIs('payrolls.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#C026D3,#E879F9);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </span>
+            Payroll
+        </a>
         <a href="{{ route('contacts.index') }}" class="ln-dropdown-item {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0EA5E9,#38BDF8);">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>
@@ -908,7 +920,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
         Laporan
     </a>
-    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
+    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*','employees.*','payrolls.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
         Lainnya
     </button>
