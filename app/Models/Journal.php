@@ -2,18 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\Auditable;
-use App\Models\Concerns\BelongsToCompany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Journal extends Model
 {
-    use HasFactory, BelongsToCompany, Auditable;
-
     protected $fillable = [
         'company_id',
         'date',
+        'currency',
+        'exchange_rate',
         'reference',
         'description',
         'status',
@@ -24,36 +23,32 @@ class Journal extends Model
 
     protected $casts = [
         'date' => 'date',
+        'exchange_rate' => 'decimal:8',
         'posted_at' => 'datetime',
     ];
 
-    public function company()
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
-    public function entries()
+    public function entries(): HasMany
     {
         return $this->hasMany(JournalEntry::class);
     }
 
-    public function creator()
+    public function getTotalDebitAttribute(): float
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return (float) $this->entries->sum('debit');
     }
 
-    public function poster()
+    public function getTotalCreditAttribute(): float
     {
-        return $this->belongsTo(User::class, 'posted_by');
+        return (float) $this->entries->sum('credit');
     }
 
-    public function totalDebit()
+    public function getIsBalancedAttribute(): bool
     {
-        return $this->entries->sum('debit');
-    }
-
-    public function totalCredit()
-    {
-        return $this->entries->sum('credit');
+        return abs($this->total_debit - $this->total_credit) < 0.01;
     }
 }

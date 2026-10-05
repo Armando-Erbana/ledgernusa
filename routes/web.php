@@ -11,6 +11,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboard;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenant;
+use App\Http\Controllers\Setting\CurrencyController;
+use App\Http\Controllers\Setting\ExchangeRateController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================
@@ -41,6 +43,16 @@ Route::middleware(['auth', 'active.company'])->group(function () {
         Route::get('/aging-piutang', [\App\Http\Controllers\AgingReportController::class, 'piutang'])->name('aging-piutang');
         Route::get('/aging-hutang', [\App\Http\Controllers\AgingReportController::class, 'hutang'])->name('aging-hutang');
     });
+
+    Route::middleware(['auth'])->prefix('settings')->name('settings.')->group(function () {
+    Route::resource('currencies', CurrencyController::class);
+
+    Route::resource('exchange-rates', ExchangeRateController::class)
+        ->only(['index', 'store', 'destroy']);
+
+    Route::get('exchange-rates/fetch', [ExchangeRateController::class, 'fetchRate'])
+        ->name('exchange-rates.fetch');
+});
 
         // ============ Undang User ============
     Route::get('/invitations', [\App\Http\Controllers\InvitationController::class, 'index'])->name('invitations.index');

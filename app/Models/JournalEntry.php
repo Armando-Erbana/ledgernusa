@@ -1,14 +1,36 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JournalEntry extends Model
 {
-    use HasFactory;
-    protected $fillable = ['journal_id','account_id','debit','credit','description'];
+    protected $fillable = [
+        'journal_id',
+        'account_id',
+        'debit',
+        'credit',
+        'foreign_debit',
+        'foreign_credit',
+        'description',
+    ];
 
-    public function journal() { return $this->belongsTo(Journal::class); }
-    public function account() { return $this->belongsTo(Account::class); }
+    protected $casts = [
+        'debit' => 'decimal:2',
+        'credit' => 'decimal:2',
+        'foreign_debit' => 'decimal:2',
+        'foreign_credit' => 'decimal:2',
+    ];
+
+    public function journal(): BelongsTo
+    {
+        return $this->belongsTo(Journal::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
 }

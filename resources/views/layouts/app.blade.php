@@ -137,7 +137,7 @@
             left: 0; right: 0; bottom: 0;
             z-index: 50;
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             align-items: stretch;
             background: rgba(255, 255, 255, 0.88);
             -webkit-backdrop-filter: saturate(180%) blur(16px);
@@ -188,7 +188,7 @@
         @media (min-width: 768px) {
             nav.ln-navbar {
                 left: 50%; right: auto;
-                width: min(620px, calc(100% - 32px));
+                width: min(720px, calc(100% - 32px));
                 bottom: 16px;
                 transform: translateX(-50%);
                 border: 1px solid var(--ln-line);
@@ -862,12 +862,6 @@
             </span>
             Kontak
         </a>
-        <a href="{{ route('subscription.index') }}" class="ln-dropdown-item {{ request()->routeIs('subscription.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#14213A,#1B2C4B);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>
-            </span>
-            Langganan
-        </a>
     </div>
 
     <div class="ln-dropdown-divider"></div>
@@ -876,11 +870,11 @@
     <div class="ln-dropdown-header">Sistem</div>
     <div class="ln-dropdown-grid">
         <a href="{{ route('invitations.index') }}" class="ln-dropdown-item {{ request()->routeIs('invitations.*') ? 'active' : '' }}">
-    <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#34D399);">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11v6"/><path d="M19 14h6"/></svg>
-    </span>
-    Undang User
-</a>
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#34D399);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11v6"/><path d="M19 14h6"/></svg>
+            </span>
+            Undang User
+        </a>
         <a href="{{ route('companies.index') }}" class="ln-dropdown-item {{ request()->routeIs('companies.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#5B6577,#8B96A9);">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2"/></svg>
@@ -892,6 +886,19 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>
             </span>
             Profil
+        </a>
+        {{-- MULTI-CURRENCY --}}
+        <a href="{{ route('settings.currencies.index') }}" class="ln-dropdown-item {{ request()->routeIs('settings.currencies.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0E7490,#22D3EE);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.8 0-3 .9-3 2s1 1.8 3 2 3 1 3 2-1.2 2-3 2c-1.4 0-2.5-.5-3-1.5"/><path d="M12 6v1.5M12 16.5V18"/></svg>
+            </span>
+            Currencies
+        </a>
+        <a href="{{ route('settings.exchange-rates.index') }}" class="ln-dropdown-item {{ request()->routeIs('settings.exchange-rates.*') ? 'active' : '' }}">
+            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C2D12,#F59E0B);">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/><path d="M10 6 4 12l6 6"/></svg>
+            </span>
+            Kurs
         </a>
         <form method="POST" action="{{ route('logout') }}" style="display:contents;">
             @csrf
@@ -918,6 +925,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         Penjualan
     </a>
+    <a href="{{ route('subscription.index') }}" class="ln-navitem {{ request()->routeIs('subscription.*') ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>
+        Langganan
+    </a>
     <a href="{{ route('journals.index') }}" class="ln-navitem {{ request()->routeIs('journals.*') ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17.5V7.5a3 3 0 0 1 3-3"/><path d="M9 9h7M9 12.5h7"/></svg>
         Jurnal
@@ -926,7 +937,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
         Laporan
     </a>
-    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','subscription.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*','employees.*','payrolls.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
+    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*','employees.*','payrolls.*','invitations.*','settings.currencies.*','settings.exchange-rates.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
         Lainnya
     </button>
@@ -985,7 +996,6 @@ window.lnToggleMore = function() {
     }
 };
 
-// Tutup dropdown kalau tekan Escape
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const menu = document.getElementById('lnDdMenu');
