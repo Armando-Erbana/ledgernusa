@@ -17,6 +17,13 @@ class StockService
         return DB::transaction(function () use ($productId, $warehouseId, $qty, $unitCost, $meta) {
             $product = Product::findOrFail($productId);
 
+            // Update stok per gudang
+    $productStock = \App\Models\ProductStock::firstOrCreate(
+    ['product_id' => $productId, 'warehouse_id' => $warehouseId],
+    ['company_id' => $product->company_id, 'stock' => 0, 'min_stock' => 0]
+    );
+    $productStock->increment('stock', $qty);
+
             $stockBefore = (float) $product->stock;
             $stockAfter = $stockBefore + $qty;
 
@@ -68,6 +75,13 @@ class StockService
             $unitCost = (float) $product->cost_price;
 
             $product->update(['stock' => $stockAfter]);
+
+            // Update stok per gudang
+        $productStock = \App\Models\ProductStock::firstOrCreate(
+         ['product_id' => $productId, 'warehouse_id' => $warehouseId],
+         ['company_id' => $product->company_id, 'stock' => 0, 'min_stock' => 0]
+        );
+$productStock->decrement('stock', $qty);
 
             return StockMovement::create([
                 'company_id' => $product->company_id,

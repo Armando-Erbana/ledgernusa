@@ -1,12 +1,13 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 
 class Payroll extends Model
 {
-    use BelongsToCompany;
+    use HasFactory, BelongsToCompany, Auditable;
     protected $fillable = [
         'company_id','journal_id','payroll_number','period_month','period_year',
         'payment_date','total_gross','total_deduction','total_pph21','total_bpjs',

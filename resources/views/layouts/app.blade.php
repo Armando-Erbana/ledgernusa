@@ -875,6 +875,12 @@
     {{-- GRUP 4: SISTEM --}}
     <div class="ln-dropdown-header">Sistem</div>
     <div class="ln-dropdown-grid">
+        <a href="{{ route('invitations.index') }}" class="ln-dropdown-item {{ request()->routeIs('invitations.*') ? 'active' : '' }}">
+    <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#34D399);">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11v6"/><path d="M19 14h6"/></svg>
+    </span>
+    Undang User
+</a>
         <a href="{{ route('companies.index') }}" class="ln-dropdown-item {{ request()->routeIs('companies.*') ? 'active' : '' }}">
             <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#5B6577,#8B96A9);">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2"/></svg>

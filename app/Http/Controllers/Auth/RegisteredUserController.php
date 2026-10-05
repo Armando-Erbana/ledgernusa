@@ -28,24 +28,36 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+   public function store(Request $request): RedirectResponse
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
 
-        event(new Registered($user));
+    event(new Registered($user));
+    Auth::login($user);
 
-        Auth::login($user);
-
-        return redirect(RouteServiceProvider::HOME);
+    // Cek apakah ada invitation di query string
+    $invitationToken = $request->query('invitation');
+    if ($invitationToken) {
+        $invitation = \App\Models\Invitation::where('token', $invitationToken)->first();
+        if ($invitation && $invitation->isValid() && $invitation->email === $user->email) {
+            $user->companies()->attach($invitation->company_id, ['role' => $invitation->role]);
+            $invitation->update(['accepted_at' => now()]);
+            session(['company_id' => $invitation->company_id]);
+            return redirect()->route('dashboard')
+                ->with('success', 'Selamat! Anda bergabung ke ' . $invitation->company->name);
+        }
     }
+
+    return redirect(route('dashboard', absolute: false));
+}
 }

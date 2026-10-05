@@ -24,6 +24,7 @@ Route::get('/', function () {
 // GRUP 1: Auth + Active Company (TANPA cek subscription)
 // Bisa diakses walau langganan expired
 // =========================================================
+Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])->name('invitations.accept');
 Route::middleware(['auth', 'active.company'])->group(function () {
 
     // Subscription
@@ -41,6 +42,15 @@ Route::middleware(['auth', 'active.company'])->group(function () {
         Route::get('/aging-hutang', [\App\Http\Controllers\AgingReportController::class, 'hutang'])->name('aging-hutang');
     });
 
+        // ============ Undang User ============
+    Route::get('/invitations', [\App\Http\Controllers\InvitationController::class, 'index'])->name('invitations.index');
+    Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
+    Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
+
+        // ============ Audit Trail ============
+    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
+    
         // Export
     Route::prefix('export')->name('export.')->group(function () {
         Route::get('/income-statement-pdf', [\App\Http\Controllers\ExportController::class, 'incomeStatementPdf'])->name('income-statement-pdf');

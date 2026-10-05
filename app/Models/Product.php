@@ -1,12 +1,13 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use BelongsToCompany;
+    use HasFactory, BelongsToCompany, Auditable;
 
     protected $fillable = [
         'company_id','category_id','code','name','unit','description','image',

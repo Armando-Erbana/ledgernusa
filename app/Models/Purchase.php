@@ -1,13 +1,14 @@
 <?php
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory, BelongsToCompany, Auditable;
     protected $fillable = [
         'company_id','journal_id','bill_number','supplier_id','date','due_date','type',
         'subtotal','discount','tax','total','paid_amount','status','notes','created_by',
