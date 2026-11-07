@@ -1,26 +1,38 @@
 <?php
+
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToCompany;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // <--- TAMBAHKAN BARIS INI
 use Illuminate\Database\Eloquent\Model;
 
 class Employee extends Model
 {
     use HasFactory, BelongsToCompany, Auditable;
+
     protected $fillable = [
-        'company_id','employee_number','name','npwp','ktp','position','department',
-        'join_date','resign_date','employment_type','ptkp_status',
-        'basic_salary','fixed_allowance','bank_name','bank_account_number','is_active',
+        'company_id', 'employee_number', 'name', 'npwp', 'ktp', 'position', 'department',
+        'join_date', 'resign_date', 'employment_type', 'ptkp_status',
+        'basic_salary', 'fixed_allowance', 'bank_name', 'bank_account_number', 'is_active',
     ];
+
     protected $casts = [
-        'join_date' => 'date','resign_date' => 'date',
-        'basic_salary' => 'decimal:2','fixed_allowance' => 'decimal:2',
+        'join_date' => 'date',
+        'resign_date' => 'date',
+        'basic_salary' => 'decimal:2',
+        'fixed_allowance' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 
-    public function payrollItems() { return $this->hasMany(PayrollItem::class); }
+    public function payrollItems() 
+    { 
+        return $this->hasMany(PayrollItem::class); 
+    }
 
+    /**
+     * Mendapatkan nominal PTKP berdasarkan status pernikahan & tanggungan.
+     */
     public function ptkpAmount(): float
     {
         return match ($this->ptkp_status) {
@@ -32,7 +44,7 @@ class Employee extends Model
             'K/1'  => 63_000_000,
             'K/2'  => 67_500_000,
             'K/3'  => 72_000_000,
-            default => 54_000_000,
+            default => 54_000_000, 
         };
     }
 }

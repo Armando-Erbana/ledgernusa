@@ -13,7 +13,9 @@ class TransferController extends Controller
     {
         $query = Transfer::with(['fromAccount', 'toAccount'])->latest('date')->latest('id');
         $transfers = $query->paginate(20)->withQueryString();
-        return view('transfers.index', compact('transfers'));
+        
+        // Diperbaiki: transfers.index -> transfer.index
+        return view('transfer.index', compact('transfers'));
     }
 
     public function create()
@@ -25,7 +27,8 @@ class TransferController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('transfers.create', compact('accounts'));
+        // Diperbaiki: transfers.create -> transfer.create
+        return view('transfer.create', compact('accounts'));
     }
 
     public function store(Request $request)
@@ -56,7 +59,9 @@ class TransferController extends Controller
     public function show(Transfer $transfer)
     {
         $transfer->load(['fromAccount', 'toAccount', 'journal.entries.account']);
-        return view('transfers.show', compact('transfer'));
+        
+        // Diperbaiki: transfers.show -> transfer.show
+        return view('transfer.show', compact('transfer'));
     }
 
     public function edit(Transfer $transfer)
@@ -68,7 +73,8 @@ class TransferController extends Controller
             ->orderBy('code')
             ->get();
 
-        return view('transfers.edit', compact('transfer', 'accounts'));
+        // Diperbaiki: transfers.edit -> transfer.edit
+        return view('transfer.edit', compact('transfer', 'accounts'));
     }
 
     public function update(Request $request, Transfer $transfer)

@@ -45,6 +45,11 @@ class Company extends Model
         return $this->hasMany(Account::class);
     }
 
+    public function paymentProofs(): \Illuminate\Database\Eloquent\Relations\HasMany
+{
+    return $this->hasMany(\App\Models\PaymentProof::class);
+}
+
     public function contacts()
     {
         return $this->hasMany(Contact::class);

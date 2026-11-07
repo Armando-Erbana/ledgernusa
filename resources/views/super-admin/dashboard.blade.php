@@ -3,6 +3,28 @@
 
 @section('content')
 
+@php
+    $pendingProofsCount = \App\Models\PaymentProof::where('status', 'pending')->count();
+@endphp
+
+@if($pendingProofsCount > 0)
+    <a href="{{ route('super-admin.payment-proofs.index', ['status' => 'pending']) }}"
+       class="block bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-5 mb-6 hover:bg-yellow-100 transition">
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                    🔔
+                </div>
+                <div>
+                    <p class="font-bold text-yellow-900">{{ $pendingProofsCount }} bukti pembayaran menunggu verifikasi</p>
+                    <p class="text-sm text-yellow-700">Klik untuk melihat</p>
+                </div>
+            </div>
+            <span class="text-2xl text-yellow-600">→</span>
+        </div>
+    </a>
+@endif
+
 <style>
 .tn{--b1:#1D4ED8;--b2:#06B6D4;--navy:#0B1B3F;--ink:#0F1E3D;--mute:#6B7A99;--line:rgba(15,30,61,.08);
     position:relative;isolation:isolate;font-feature-settings:"tnum"}

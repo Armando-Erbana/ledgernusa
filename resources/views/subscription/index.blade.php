@@ -1,10 +1,11 @@
 @extends('layouts.app')
 @section('title', 'Langganan')
+
 @section('content')
 
 <style>
 .dz{--b1:#1D4ED8;--b2:#06B6D4;--navy:#0B1B3F;--ink:#0F1E3D;--mute:#6B7A99;--line:rgba(15,30,61,.08);
-    position:relative;isolation:isolate;font-feature-settings:"tnum"}
+    position:relative;isolation:isolate;max-width:1024px;margin:0 auto;font-feature-settings:"tnum"}
 .dz::before,.dz::after{content:"";position:absolute;z-index:-1;border-radius:50%;filter:blur(70px);pointer-events:none}
 .dz::before{width:320px;height:320px;top:-80px;right:-60px;background:var(--b2);opacity:.2}
 .dz::after{width:280px;height:280px;top:420px;left:-90px;background:var(--b1);opacity:.14}
@@ -18,157 +19,285 @@
     border:1px solid rgba(255,255,255,.75);border-radius:20px;
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 12px 32px -14px rgba(15,30,61,.18),0 0 0 1px var(--line)}
 
-/* current plan */
-.dz-cur{position:relative;overflow:hidden;padding:26px;margin-bottom:28px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
-    background:linear-gradient(135deg,var(--navy),var(--b1));border-color:rgba(255,255,255,.15);
-    box-shadow:0 14px 34px -12px rgba(29,78,216,.6),inset 0 1px 0 rgba(255,255,255,.22)}
-.dz-cur::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
-    background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(255,255,255,.06) 27px 28px)}
-.dz-cur > *{position:relative}
-.dz-cur .k{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.7)}
-.dz-cur .plan{margin:6px 0 10px;font-size:30px;font-weight:700;letter-spacing:-.02em}
-.dz-cur .st{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.75)}
-.dz-right{text-align:right;padding:14px 20px;border-radius:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.2);min-width:160px}
-.dz-right .k{font-size:12px;color:rgba(255,255,255,.72)}
-.dz-right .big{margin-top:4px;font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
-.dz-right .mid{margin-top:4px;font-size:18px;font-weight:600}
-
-/* badges */
-.dz-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;text-transform:capitalize}
-.dz-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-.dz-badge.posted{color:#0E8F6B;background:rgba(16,185,129,.12)}
-.dz-badge.draft{color:#B45309;background:rgba(245,158,11,.14)}
-.dz-cur .dz-badge.posted{color:#7CF0C8;background:rgba(255,255,255,.14)}
-.dz-cur .dz-badge.draft{color:#FCD98A;background:rgba(255,255,255,.14)}
-
-/* section */
 .dz-sec{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:16px;font-weight:700;color:var(--ink)}
 .dz-sec::before{content:"";width:4px;height:16px;border-radius:4px;background:linear-gradient(180deg,var(--b1),var(--b2))}
 
+/* status */
+.dz-status{position:relative;overflow:hidden;padding:24px 26px;margin-bottom:18px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+    background:linear-gradient(135deg,var(--navy),var(--b1));border-color:rgba(255,255,255,.15);
+    box-shadow:0 14px 34px -12px rgba(29,78,216,.6),inset 0 1px 0 rgba(255,255,255,.22)}
+.dz-status::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(255,255,255,.06) 27px 28px)}
+.dz-status > *{position:relative}
+.dz-status .k{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.dz-status .st{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+.dz-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;font-size:13px;font-weight:600;background:rgba(255,255,255,.14)}
+.dz-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.dz-pill.on{color:#7CF0C8}
+.dz-pill.off{color:#FFB4BE}
+.dz-pill.none{color:rgba(255,255,255,.8)}
+.dz-status .until{font-size:13.5px;color:rgba(255,255,255,.8)}
+.dz-status .co{text-align:right}
+.dz-status .co b{display:block;margin-top:6px;font-size:15px;font-weight:600}
+
+/* payment info */
+.dz-pay{padding:22px 24px;margin-bottom:30px}
+.dz-pay h3{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--ink)}
+.dz-pay p.note{margin:0 0 16px;font-size:13px;color:var(--mute)}
+.dz-banks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dz-bank{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.dz-bank .nm{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--b1)}
+.dz-bank .no{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+.dz-bank .an{font-size:12px;color:var(--mute)}
+.dz-copy{align-self:flex-start;margin-top:4px;height:28px;padding:0 11px;border-radius:8px;font-size:12px;font-weight:600;color:var(--b1);
+    background:rgba(29,78,216,.08);border:0;cursor:pointer;transition:.18s}
+.dz-copy:hover{background:rgba(29,78,216,.16)}
+.dz-pay .foot{margin:16px 0 0;font-size:12.5px;color:var(--mute)}
+
 /* plans */
 .dz-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px}
-.dz-plan{position:relative;padding:24px;display:flex;flex-direction:column;transition:.2s}
-.dz-plan:hover{transform:translateY(-3px)}
+.dz-plan{padding:24px;display:flex;flex-direction:column;transition:.2s}
+.dz-plan:hover{transform:translateY(-2px)}
 .dz-plan.on{border-color:transparent;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 18px 38px -14px rgba(29,78,216,.32),0 0 0 2px var(--b1)}
-.dz-tag{position:absolute;top:16px;right:16px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;color:#fff;
-    background:linear-gradient(135deg,var(--b1),var(--b2))}
 .dz-pn{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--b1)}
-.dz-price{margin:8px 0 18px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.dz-pd{margin:6px 0 0;font-size:12.5px;color:var(--mute);line-height:1.5}
+.dz-price{margin:12px 0 20px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 .dz-price small{font-size:13px;font-weight:500;color:var(--mute)}
-.dz-feat{list-style:none;margin:0 0 22px;padding:16px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;flex:1}
-.dz-feat li{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink)}
-.dz-feat svg{flex:none;width:16px;height:16px;padding:3px;border-radius:50%;color:var(--b1);background:rgba(29,78,216,.1)}
+.dz-plan .spacer{flex:1}
 
-.dz-btn{width:100%;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;
-    font-size:13px;font-weight:600;border:0;cursor:pointer;transition:.18s}
+.dz-btn{height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 22px;border-radius:12px;
+    font-size:13px;font-weight:600;text-decoration:none;border:0;cursor:pointer;transition:.18s}
+.dz-btn.block{width:100%}
 .dz-btn.pri{color:#fff;background:linear-gradient(135deg,var(--b1),var(--b2));box-shadow:0 8px 18px -8px rgba(29,78,216,.6),inset 0 1px 0 rgba(255,255,255,.3)}
 .dz-btn.pri:hover{transform:translateY(-1px);filter:brightness(1.05)}
 .dz-btn.ghost{color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--line)}
 .dz-btn.ghost:hover{background:#fff;border-color:rgba(29,78,216,.35);color:var(--b1)}
+.dz-btn.chosen{color:var(--b1);background:rgba(29,78,216,.08);cursor:default}
 
-/* invoices */
-.dz-card{overflow:hidden}
-.dz-scroll{overflow-x:auto}
-.dz-table{width:100%;border-collapse:collapse;min-width:520px}
-.dz-table th{padding:14px 20px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-    color:var(--mute);background:rgba(15,30,61,.025);border-bottom:1px solid var(--line);white-space:nowrap}
-.dz-table th.num{text-align:right}
-.dz-table th.center{text-align:center}
-.dz-table td{padding:14px 20px;font-size:13.5px;color:var(--ink);border-bottom:1px solid var(--line)}
-.dz-table tbody tr{transition:background .15s}
-.dz-table tbody tr:hover{background:rgba(29,78,216,.045)}
-.dz-table tbody tr:last-child td{border-bottom:0}
-.dz-table td.num{text-align:right;font-weight:600;white-space:nowrap}
-.dz-table td.center{text-align:center}
-.dz-code{display:inline-block;padding:4px 10px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-    font-size:12.5px;font-weight:600;color:var(--b1);background:rgba(29,78,216,.08)}
-.dz-date{color:var(--mute);font-size:13px}
+.dz-empty{padding:40px 20px;text-align:center;color:var(--mute);margin-bottom:30px}
 
-@media(max-width:860px){.dz-plans{grid-template-columns:1fr}}
-@media(max-width:560px){.dz-title{font-size:23px}.dz-right{text-align:left;width:100%}}
+/* form */
+.dz-form{padding:26px;margin-bottom:30px}
+.dz-form h2{margin:0 0 20px;font-size:16px;font-weight:700;color:var(--ink)}
+.dz-form h2 span{color:var(--b1)}
+.dz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.dz-full{grid-column:1 / -1}
+.dz-field{display:flex;flex-direction:column;gap:7px}
+.dz-lbl{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.02em}
+.dz-hint{margin:0;font-size:12px;color:var(--mute)}
+.dz-in,.dz-sel,.dz-ta{width:100%;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.8);
+    padding:0 14px;font-size:13.5px;color:var(--ink);outline:none;transition:.18s;font-family:inherit}
+.dz-in,.dz-sel{height:42px}
+.dz-ta{padding:11px 14px;resize:vertical;min-height:72px}
+.dz-in:focus,.dz-sel:focus,.dz-ta:focus{border-color:var(--b1);box-shadow:0 0 0 4px rgba(29,78,216,.12);background:#fff}
+.dz-in[type=file]{padding:0;line-height:40px;cursor:pointer;color:var(--mute)}
+.dz-in[type=file]::file-selector-button{height:40px;margin-right:14px;padding:0 16px;border:0;border-right:1px solid var(--line);
+    background:rgba(29,78,216,.08);color:var(--b1);font-weight:600;font-size:13px;cursor:pointer;transition:.18s}
+.dz-in[type=file]::file-selector-button:hover{background:rgba(29,78,216,.16)}
+.dz-actions{display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+
+/* history */
+.dz-hist{padding:8px 24px}
+.dz-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.dz-row:last-child{border-bottom:0}
+.dz-row .t{font-size:14px;font-weight:600;color:var(--ink)}
+.dz-row .m{margin-top:4px;font-size:12.5px;color:var(--mute)}
+.dz-row .d{margin-top:3px;font-size:12px;color:#A3AEC6}
+.dz-reject{margin-top:8px;padding:8px 12px;border-radius:10px;font-size:12.5px;color:#B4233A;background:rgba(239,68,68,.08)}
+.dz-side{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.dz-side form{margin:0}
+.dz-del{border:0;background:transparent;font-size:12.5px;font-weight:600;color:#B4233A;cursor:pointer;padding:0}
+.dz-del:hover{text-decoration:underline}
+
+.dz-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600}
+.dz-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.dz-badge.pending{color:#B45309;background:rgba(245,158,11,.14)}
+.dz-badge.ok{color:#0E8F6B;background:rgba(16,185,129,.12)}
+.dz-badge.no{color:#B4233A;background:rgba(239,68,68,.1)}
+
+@media(max-width:860px){.dz-plans,.dz-banks{grid-template-columns:1fr}}
+@media(max-width:640px){.dz-grid{grid-template-columns:1fr}.dz-title{font-size:23px}.dz-status .co{text-align:left}.dz-form{padding:20px}.dz-hist{padding:4px 18px}}
 </style>
 
 <div class="dz">
 
     <span class="dz-eyebrow"><i></i>Akun</span>
     <h1 class="dz-title">Langganan</h1>
-    <p class="dz-sub">Kelola paket &amp; tagihan Anda</p>
+    <p class="dz-sub">Pilih paket, transfer, lalu upload bukti pembayaran</p>
 
-    @if($subscription)
-        <div class="dz-glass dz-cur">
-            <div>
-                <div class="k">Paket Saat Ini</div>
-                <div class="plan">{{ $subscription->plan->name ?? '-' }}</div>
-                <div class="st">
-                    Status:
-                    <span class="dz-badge {{ $subscription->status === 'active' ? 'posted' : 'draft' }}">
-                        {{ $subscription->status }}
-                    </span>
-                </div>
-            </div>
-            <div class="dz-right">
-                @if($subscription->status === 'trial')
-                    <div class="k">Sisa trial</div>
-                    <div class="big">{{ $subscription->daysRemaining() }} hari</div>
+    {{-- STATUS --}}
+    <div class="dz-glass dz-status">
+        <div>
+            <div class="k">Status Langganan</div>
+            <div class="st">
+                @if($subscription && $subscription->isActive())
+                    <span class="dz-pill on">Aktif</span>
+                    <span class="until">s/d {{ $subscription->ends_at->format('d M Y') }} · {{ $subscription->daysRemaining() }} hari lagi</span>
+                @elseif($subscription)
+                    <span class="dz-pill off">Berakhir</span>
+                    <span class="until">{{ $subscription->ends_at?->format('d M Y') }}</span>
                 @else
-                    <div class="k">Berakhir</div>
-                    <div class="mid">{{ $subscription->ends_at?->format('d M Y') }}</div>
+                    <span class="dz-pill none">Belum Berlangganan</span>
                 @endif
             </div>
         </div>
-    @endif
-
-    <h2 class="dz-sec">Paket Tersedia</h2>
-    <div class="dz-plans">
-        @foreach($plans as $plan)
-            @php $isCurrent = $subscription && $subscription->plan_id === $plan->id; @endphp
-            <div class="dz-glass dz-plan {{ $isCurrent ? 'on' : '' }}">
-                @if($isCurrent)<span class="dz-tag">Aktif</span>@endif
-                <div class="dz-pn">{{ $plan->name }}</div>
-                <div class="dz-price">Rp {{ number_format($plan->price_monthly, 0, ',', '.') }}<small>/bulan</small></div>
-                <ul class="dz-feat">
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{{ $plan->max_users == -1 ? 'Unlimited' : $plan->max_users }} user</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{{ $plan->max_journals_per_month == -1 ? 'Unlimited' : number_format($plan->max_journals_per_month) }} jurnal/bulan</li>
-                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{{ $plan->max_companies == -1 ? 'Unlimited' : $plan->max_companies }} company</li>
-                </ul>
-                <button class="dz-btn {{ $isCurrent ? 'ghost' : 'pri' }}" onclick="alert('Fitur upgrade akan segera hadir. Hubungi admin untuk upgrade manual.')">
-                    {{ $isCurrent ? 'Paket Aktif' : 'Pilih Paket' }}
-                </button>
-            </div>
-        @endforeach
+        <div class="co">
+            <div class="k">Perusahaan</div>
+            <b>{{ $company->name ?? '-' }}</b>
+        </div>
     </div>
 
-    @if($invoices->count() > 0)
-        <h2 class="dz-sec">Riwayat Tagihan</h2>
-        <div class="dz-glass dz-card">
-            <div class="dz-scroll">
-                <table class="dz-table">
-                    <thead>
-                        <tr>
-                            <th>No. Invoice</th>
-                            <th>Tanggal</th>
-                            <th class="num">Jumlah</th>
-                            <th class="center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($invoices as $inv)
-                            <tr>
-                                <td><span class="dz-code">{{ $inv->invoice_number }}</span></td>
-                                <td class="dz-date">{{ $inv->created_at->format('d/m/Y') }}</td>
-                                <td class="num">Rp {{ number_format($inv->amount, 0, ',', '.') }}</td>
-                                <td class="center">
-                                    <span class="dz-badge {{ $inv->status === 'paid' ? 'posted' : 'draft' }}">{{ $inv->status }}</span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+    {{-- INFO TRANSFER --}}
+    <div class="dz-glass dz-pay">
+        <h3>Instruksi Pembayaran Manual</h3>
+        <p class="note">Transfer ke salah satu rekening berikut:</p>
+        <div class="dz-banks">
+            <div class="dz-bank">
+                <span class="nm">BCA</span>
+                <span class="no">1234567890</span>
+                <span class="an">a/n PT LedgerNusa Digital</span>
+                <button type="button" class="dz-copy" onclick="copyNo(this, '1234567890')">Salin</button>
             </div>
+            <div class="dz-bank">
+                <span class="nm">Mandiri</span>
+                <span class="no">9876543210</span>
+                <span class="an">a/n PT LedgerNusa Digital</span>
+                <button type="button" class="dz-copy" onclick="copyNo(this, '9876543210')">Salin</button>
+            </div>
+            <div class="dz-bank">
+                <span class="nm">BRI</span>
+                <span class="no">5555666677</span>
+                <span class="an">a/n PT LedgerNusa Digital</span>
+                <button type="button" class="dz-copy" onclick="copyNo(this, '5555666677')">Salin</button>
+            </div>
+        </div>
+        <p class="foot">Setelah transfer, upload bukti di form di bawah. Verifikasi maksimal 1x24 jam.</p>
+    </div>
+
+    {{-- PILIH PAKET --}}
+    <h2 class="dz-sec">Pilih Paket</h2>
+    @if($plans->isEmpty())
+        <div class="dz-glass dz-empty">Belum ada paket tersedia.</div>
+    @else
+        <div class="dz-plans">
+            @foreach($plans as $plan)
+                @php $isSelected = $selectedPlanId == $plan->id; @endphp
+                <div class="dz-glass dz-plan {{ $isSelected ? 'on' : '' }}">
+                    <div class="dz-pn">{{ $plan->name }}</div>
+                    @if($plan->description ?? null)
+                        <p class="dz-pd">{{ $plan->description }}</p>
+                    @endif
+                    <div class="dz-price">Rp {{ number_format($plan->price, 0, ',', '.') }}<small> / {{ $plan->duration_days ?? 30 }} hari</small></div>
+                    <div class="spacer"></div>
+                    @if($isSelected)
+                        <span class="dz-btn block chosen">Paket Dipilih</span>
+                    @else
+                        <a href="{{ route('subscription.index', ['plan' => $plan->id]) }}" class="dz-btn block ghost">Pilih Paket</a>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- FORM UPLOAD BUKTI --}}
+    @php $selectedPlan = $selectedPlanId ? $plans->firstWhere('id', $selectedPlanId) : null; @endphp
+    @if($selectedPlan)
+        <div class="dz-glass dz-form">
+            <h2>Upload Bukti Transfer — <span>{{ $selectedPlan->name }}</span></h2>
+
+            <form method="POST" action="{{ route('subscription.upload-proof') }}" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="plan_id" value="{{ $selectedPlan->id }}">
+
+                <div class="dz-grid">
+                    <div class="dz-field">
+                        <label class="dz-lbl">Nominal Transfer (Rp) *</label>
+                        <input type="number" name="amount" value="{{ old('amount', $selectedPlan->price) }}"
+                               required min="{{ $selectedPlan->price }}" step="1000" class="dz-in">
+                        <p class="dz-hint">Minimal Rp {{ number_format($selectedPlan->price, 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="dz-field">
+                        <label class="dz-lbl">Tanggal Transfer *</label>
+                        <input type="date" name="transfer_date" value="{{ old('transfer_date', date('Y-m-d')) }}"
+                               required max="{{ date('Y-m-d') }}" class="dz-in">
+                    </div>
+
+                    <div class="dz-field">
+                        <label class="dz-lbl">Bank Pengirim *</label>
+                        <select name="bank_from" required class="dz-sel">
+                            <option value="">— Pilih Bank —</option>
+                            @foreach(['BCA','Mandiri','BRI','BNI','BSI','CIMB','Permata','BTN','Bank Lain'] as $b)
+                                <option value="{{ $b }}" @selected(old('bank_from') === $b)>{{ $b }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="dz-field">
+                        <label class="dz-lbl">Nama Pemilik Rekening Pengirim *</label>
+                        <input type="text" name="account_name" value="{{ old('account_name') }}"
+                               required class="dz-in" placeholder="Sesuai rekening">
+                    </div>
+
+                    <div class="dz-field dz-full">
+                        <label class="dz-lbl">Foto Bukti Transfer * (JPG/PNG, max 5MB)</label>
+                        <input type="file" name="proof_file" accept="image/*" required class="dz-in">
+                    </div>
+
+                    <div class="dz-field dz-full">
+                        <label class="dz-lbl">Catatan (opsional)</label>
+                        <textarea name="notes" rows="2" class="dz-ta" placeholder="Contoh: transfer dari rekening istri">{{ old('notes') }}</textarea>
+                    </div>
+                </div>
+
+                <div class="dz-actions">
+                    <button type="submit" class="dz-btn pri">Upload Bukti Transfer</button>
+                    <a href="{{ route('subscription.index') }}" class="dz-btn ghost">Batal</a>
+                </div>
+            </form>
+        </div>
+    @endif
+
+    {{-- RIWAYAT BUKTI --}}
+    @if($proofs->isNotEmpty())
+        <h2 class="dz-sec">Riwayat Upload Bukti</h2>
+        <div class="dz-glass dz-hist">
+            @foreach($proofs as $proof)
+                <div class="dz-row">
+                    <div>
+                        <div class="t">{{ $proof->plan->name ?? 'Paket' }} — Rp {{ number_format($proof->amount, 0, ',', '.') }}</div>
+                        <div class="m">{{ $proof->transfer_date->format('d M Y') }} via {{ $proof->bank_from }} — a/n {{ $proof->account_name }}</div>
+                        <div class="d">Diupload {{ $proof->created_at->diffForHumans() }}</div>
+                        @if($proof->isRejected() && $proof->rejection_reason)
+                            <div class="dz-reject">Ditolak: {{ $proof->rejection_reason }}</div>
+                        @endif
+                    </div>
+                    <div class="dz-side">
+                        @if($proof->isPending())
+                            <span class="dz-badge pending">Menunggu</span>
+                            <form method="POST" action="{{ route('subscription.delete-proof', $proof) }}"
+                                  onsubmit="return confirm('Hapus bukti ini?')">
+                                @csrf @method('DELETE')
+                                <button class="dz-del">Hapus</button>
+                            </form>
+                        @elseif($proof->isApproved())
+                            <span class="dz-badge ok">Disetujui</span>
+                        @else
+                            <span class="dz-badge no">Ditolak</span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
         </div>
     @endif
 
 </div>
+
+<script>
+function copyNo(btn, no) {
+    const done = () => { btn.textContent = 'Tersalin'; setTimeout(() => btn.textContent = 'Salin', 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(no).then(done);
+}
+</script>
 
 @endsection

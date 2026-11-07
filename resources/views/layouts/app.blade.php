@@ -1,716 +1,462 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+@php
+    /* ---------- SEO: judul & deskripsi per halaman ---------- */
+    $lnTitle     = trim($__env->yieldContent('title')) ?: ($title ?? null);
+    $lnTitleFull = $lnTitle ? $lnTitle . ' — LedgerNusa' : 'LedgerNusa — Aplikasi Akuntansi Online';
+    $lnDesc      = trim($__env->yieldContent('meta_description'))
+        ?: 'LedgerNusa adalah aplikasi akuntansi online untuk jurnal, buku besar, kas & bank, penjualan, pembelian, persediaan, dan laporan keuangan usaha Anda.';
+    $lnRobots    = trim($__env->yieldContent('robots')) ?: 'noindex, nofollow';
+
+    /* ---------- Menu utama (7 Item) ---------- */
+    $navMain = [
+        ['Dashboard', 'dashboard',          'dashboard',        '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/>'],
+        ['Kas',       'cash.index',         'cash.*',           '<rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/>'],
+        ['Penjualan', 'sales.index',        'sales.*',          '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'],
+        ['Langganan', 'subscription.index', 'subscription.*',   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>'],
+        ['Jurnal',    'journals.index',     'journals.*',       '<path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/>'],
+        ['Laporan',   'reports.index',      'reports.*',        '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'],
+    ];
+
+    /* ---------- Menu "Lainnya" (teks saja, tanpa ikon) ---------- */
+    $lnMore = [
+        'Kas & Bank' => [
+            ['Kas & Bank',      'cash.index',                    'cash.*'],
+            ['Rekonsiliasi',    'bank-rec.index',                'bank-rec.*'],
+            ['Transfer',        'transfers.index',               'transfers.*'],
+        ],
+        'Penjualan' => [
+            ['Sales Order',     'sales-orders.index',            'sales-orders.*'],
+            ['Delivery',        'delivery-orders.index',         'delivery-orders.*'],
+            ['Penjualan',       'sales.index',                   'sales.*'],
+            ['Customer',        'customers.index',               'customers.*'],
+        ],
+        'Pembelian' => [
+            ['Purchase Order',  'purchase-orders.index',         'purchase-orders.*'],
+            ['Penerimaan',      'goods-receipts.index',          'goods-receipts.*'],
+            ['Pembelian',       'purchases.index',               'purchases.*'],
+            ['Supplier',        'suppliers.index',               'suppliers.*'],
+        ],
+        'Persediaan' => [
+            ['Produk',          'products.index',                'products.*'],
+            ['Mutasi Stok',     'stock.index',                   'stock.*'],
+            ['Gudang',          'warehouses.index',              'warehouses.*'],
+            ['Kategori',        'product-categories.index',      'product-categories.*'],
+        ],
+        'Akuntansi' => [
+            ['Akun (COA)',      'accounts.index',                'accounts.*'],
+            ['Aset Tetap',      'fixed-assets.index',            'fixed-assets.*'],
+            ['Pajak',           'tax.index',                     'tax.*'],
+            ['Kontak',          'contacts.index',                'contacts.*'],
+            ['Karyawan',        'employees.index',               'employees.*'],
+            ['Payroll',         'payrolls.index',                'payrolls.*'],
+        ],
+        'Sistem' => [
+            ['Undang User',     'invitations.index',             'invitations.*'],
+            ['Setting',         'companies.index',               'companies.*'],
+            ['Profil',          'profile.edit',                  'profile.*'],
+            ['Currencies',      'settings.currencies.index',     'settings.currencies.*'],
+            ['Kurs',            'settings.exchange-rates.index', 'settings.exchange-rates.*'],
+        ],
+    ];
+
+    $isOn = fn($m) => request()->routeIs(...(array) $m);
+    $mainOnAll    = collect($navMain)->contains(fn($n) => $isOn($n[2]));
+    $moreOn       = collect($lnMore)->flatten(1)->contains(fn($i) => $isOn($i[2]));
+    $moreActiveMob  = $moreOn && ! $mainOnAll;
+
+    $activeCompany = auth()->user()->activeCompany();
+@endphp
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'LedgerNusa' }}</title>
+
+    <title>{{ $lnTitleFull }}</title>
+    <meta name="description" content="{{ $lnDesc }}">
+    <meta name="robots" content="{{ $lnRobots }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LedgerNusa">
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:title" content="{{ $lnTitleFull }}">
+    <meta property="og:description" content="{{ $lnDesc }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta name="twitter:card" content="summary">
 
     {{-- PWA --}}
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#14213A">
+    <meta name="theme-color" content="#F2F2F5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LedgerNusa">
+    <link rel="icon" type="image/png" href="/images/icon-192.png">
     <link rel="apple-touch-icon" href="/images/icon-192.png">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --ln-navy: #14213A;
-            --ln-navy-deep: #101A30;
-            --ln-cyan: #1C8FC4;
-            --ln-cyan-bright: #4FC3EC;
-            --ln-brass: #B4915B;
-            --ln-paper: #F6F6F3;
-            --ln-line: #E4E7ED;
-            --ln-ink-soft: #5B6577;
-            --ln-ink-faint: #8B96A9;
-            --ln-shadow-sm: 0 1px 2px rgba(16, 26, 48, 0.04), 0 4px 14px rgba(16, 26, 48, 0.04);
-            --ln-shadow-md: 0 2px 4px rgba(16, 26, 48, 0.04), 0 12px 28px rgba(16, 26, 48, 0.08);
-            --ln-shadow-lg: 0 20px 60px rgba(16, 26, 48, 0.22);
+            --ink: #1D1D1F; --soft: #515154; --mute: #6E6E73; --faint: #86868B;
+            --hair: rgba(0,0,0,.08); --hair-2: rgba(0,0,0,.14);
+            --glass: rgba(255,255,255,.85);
+            --shadow-s: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px -8px rgba(0,0,0,.10);
+            --shadow-m: 0 2px 6px rgba(0,0,0,.05), 0 18px 44px -16px rgba(0,0,0,.18);
+            --shadow-l: 0 24px 70px -20px rgba(0,0,0,.38);
+            --ok: #2E9E6B; --warn: #C98A1B; --bad: #D04A4A;
         }
         * { box-sizing: border-box; }
-        html { scroll-padding-top: 72px; }
+        html { -webkit-text-size-adjust: 100%; scroll-padding-top: 90px; }
+        html.ln-lock { overflow: hidden; }
         body {
-            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-            color: var(--ln-navy);
-            -webkit-font-smoothing: antialiased;
-            background-color: var(--ln-paper);
-            background-image:
-                radial-gradient(900px 380px at 100% -80px, rgba(79, 195, 236, 0.13), transparent 70%),
-                radial-gradient(700px 320px at -10% -60px, rgba(180, 145, 91, 0.08), transparent 70%);
-            background-repeat: no-repeat;
+            margin: 0; min-height: 100vh; color: var(--ink); background: #ECECEF;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+            letter-spacing: -.003em; -webkit-font-smoothing: antialiased; font-feature-settings: "tnum";
         }
-        .ln-display { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; }
-        :focus-visible { outline: 2px solid var(--ln-cyan); outline-offset: 2px; border-radius: 6px; }
+        body::before {
+            content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(720px 520px at 88% -8%, #fff 0%, rgba(255,255,255,0) 70%),
+                radial-gradient(640px 520px at 4% 96%, #D6D6DC 0%, rgba(214,214,220,0) 70%),
+                linear-gradient(180deg, #F3F3F6, #E8E8EC);
+        }
+        a { color: inherit; -webkit-tap-highlight-color: transparent; }
+        :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
+        .ln-skip { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; transition: top .15s; }
+        .ln-skip:focus { top: 12px; }
 
-        /* ---- Header ---- */
-        .ln-header {
-            position: sticky;
-            background: rgba(255, 255, 255, 0.82);
-            -webkit-backdrop-filter: saturate(180%) blur(14px);
-            backdrop-filter: saturate(180%) blur(14px);
-            border-bottom: 1px solid var(--ln-line);
-            padding-top: env(safe-area-inset-top, 0px);
+        /* ===== Glass dasar ===== */
+        .glass {
+            background: var(--glass);
+            -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px);
+            border: 1px solid rgba(255,255,255,.75);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-m);
         }
-        .ln-header::after {
-            content: "";
-            position: absolute;
-            left: 0; right: 0; bottom: -1px;
-            height: 1.5px;
-            background: linear-gradient(90deg, var(--ln-navy) 0%, var(--ln-cyan) 45%, var(--ln-brass) 100%);
-            opacity: 0.55;
-        }
-        .ln-brand { display: flex; align-items: center; }
-        .ln-brand img { height: 28px; width: auto; display: block; }
 
+        /* ===== Header (Hanya Logo & Profile) ===== */
+        .ln-header { position: sticky; top: 0; z-index: 40; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 0; }
+        .ln-bar { max-width: 1152px; margin: 0 auto; height: 56px; padding: 0 12px 0 18px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between; }
+        .ln-brand { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+        .ln-brand img { height: 26px; width: auto; display: block; }
+
+        .ln-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+        
+        /* UPDATE: Nama perusahaan dibuat agar bisa turun baris (wrap) */
         .ln-company {
-            display: inline-block;
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 12.5px;
-            font-weight: 500;
-            color: var(--ln-ink-soft);
-            padding: 5px 12px;
-            background: #fff;
-            border: 1px solid var(--ln-line);
-            border-radius: 999px;
-        }
-        .ln-link {
-            font-size: 13px;
-            color: var(--ln-cyan);
-            font-weight: 500;
-            padding: 6px 10px;
-            border-radius: 8px;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-        .ln-link:hover { color: var(--ln-navy); background: rgba(20, 33, 58, 0.05); }
-        .ln-logout {
-            font-size: 12.5px;
-            font-weight: 500;
-            color: var(--ln-ink-faint);
-            padding: 6px 10px;
-            border-radius: 8px;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-        .ln-logout:hover { color: #C0392B; background: rgba(192, 57, 43, 0.07); }
-
-        /* ---- Trial banner ---- */
-        .ln-trial {
-            background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
-            border-bottom: 1px solid #F59E0B;
-            padding: 10px 16px;
-            text-align: center;
-            font-size: 13px;
-            color: #78350F;
-        }
-        .ln-trial a { color: #78350F; text-decoration: underline; font-weight: 600; }
-
-        /* ---- Alerts ---- */
-        .ln-alert {
-            border-radius: 10px;
-            padding: 11px 15px;
-            font-size: 13.5px;
-            border-left: 3px solid;
-            box-shadow: var(--ln-shadow-sm);
-        }
-        .ln-alert-success { background: #F2FAF6; border-color: #2FA36B; color: #1E5B3D; }
-        .ln-alert-error { background: #FDF3F2; border-color: #C0392B; color: #8A2B22; }
-        .ln-alert-error ul { margin-top: 2px; }
-
-        /* ---- Main ---- */
-        main { animation: ln-rise 0.35s ease both; }
-        main.ln-main { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); }
-        @keyframes ln-rise {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: none; }
-        }
-
-        /* ---- Bottom nav ---- */
-        nav.ln-navbar {
-            position: fixed;
-            left: 0; right: 0; bottom: 0;
-            z-index: 50;
-            display: grid;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-            align-items: stretch;
-            background: rgba(255, 255, 255, 0.88);
-            -webkit-backdrop-filter: saturate(180%) blur(16px);
-            backdrop-filter: saturate(180%) blur(16px);
-            border-top: 1px solid var(--ln-line);
-            box-shadow: 0 -8px 24px rgba(16, 26, 48, 0.06);
-        }
-        .ln-navitem {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            padding: 9px 2px calc(9px + env(safe-area-inset-bottom, 0px));
-            font-size: 10px;
-            color: var(--ln-ink-faint);
-            transition: color 0.15s ease;
-            text-align: center;
-            line-height: 1.1;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-            text-decoration: none;
-        }
-        .ln-navitem svg {
-            width: 21px; height: 21px;
-            stroke: var(--ln-ink-faint);
-            transition: stroke 0.15s ease, transform 0.15s ease;
-            flex-shrink: 0;
-        }
-        .ln-navitem:hover svg { transform: translateY(-1px); }
-        .ln-navitem.active { color: var(--ln-navy); font-weight: 600; }
-        .ln-navitem.active svg { stroke: var(--ln-cyan); }
-        .ln-navitem.active::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 50%;
-            width: 26px; height: 3px;
-            transform: translateX(-50%);
-            border-radius: 0 0 3px 3px;
-            background: linear-gradient(90deg, var(--ln-cyan), var(--ln-cyan-bright));
-        }
-        .ln-navitem.has-dropdown.active::before { display: none; }
-        .ln-navitem.has-dropdown.open { color: var(--ln-navy); font-weight: 600; }
-        .ln-navitem.has-dropdown.open svg { stroke: var(--ln-cyan); transform: rotate(180deg); }
-
-        @media (min-width: 768px) {
-            nav.ln-navbar {
-                left: 50%; right: auto;
-                width: min(720px, calc(100% - 32px));
-                bottom: 16px;
-                transform: translateX(-50%);
-                border: 1px solid var(--ln-line);
-                border-radius: 20px;
-                overflow: visible;
-                box-shadow: var(--ln-shadow-md);
-            }
-            .ln-navitem { padding-bottom: 9px; font-size: 10.5px; }
-            .ln-navitem:hover { background: rgba(20, 33, 58, 0.03); }
-        }
-
-        /* ---- Dropdown menu "Lainnya" ---- */
-        .ln-dropdown-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(16, 26, 48, 0.4);
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-            z-index: 48;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-        .ln-dropdown-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .ln-dropdown {
-            position: fixed;
-            left: 12px;
-            right: 12px;
-            bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-            z-index: 49;
-            background: #fff;
-            border: 1px solid var(--ln-line);
-            border-radius: 20px;
-            box-shadow: var(--ln-shadow-lg);
-            padding: 8px;
-            opacity: 0;
-            transform: translateY(16px) scale(0.98);
-            pointer-events: none;
-            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-            max-width: 480px;
-            margin: 0 auto;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
-        }
-        .ln-dropdown.open {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-        @media (min-width: 768px) {
-            .ln-dropdown { bottom: 96px; }
-        }
-
-        .ln-dropdown-header {
-            padding: 12px 14px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--ln-ink-faint);
-        }
-        .ln-dropdown-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-            padding: 4px;
-        }
-        @media (max-width: 380px) {
-            .ln-dropdown-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-        .ln-dropdown-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            padding: 12px 4px;
-            border-radius: 14px;
-            text-decoration: none;
-            color: var(--ln-navy);
-            font-size: 11px;
-            font-weight: 500;
+            display: inline-block; 
+            max-width: 55vw; /* Batasi maksimal lebar agar tidak menabrak logo */
+            white-space: normal; /* Biarkan turun baris jika panjang */
             text-align: center;
             line-height: 1.2;
-            transition: background 0.15s ease;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
+            padding: 6px 14px; 
+            border-radius: 12px; /* Ubah dari 999px ke 12px agar jika jadi 2 baris tetap rapi */
+            font-size: 12.5px; 
+            font-weight: 500; 
+            color: var(--soft); 
+            text-decoration: none;
+            background: rgba(255,255,255,.7); 
+            border: 1px solid var(--hair); 
+            transition: .16s;
         }
-        .ln-dropdown-item:hover { background: rgba(28, 143, 196, 0.07); }
-        .ln-dropdown-item.active { background: rgba(28, 143, 196, 0.12); color: var(--ln-cyan); }
-        .ln-dropdown-icon {
-            width: 44px; height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            box-shadow: 0 4px 10px -4px rgba(16, 26, 48, 0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+        
+        .ln-hlink, .ln-hlogout {
+            padding: 7px 11px; border-radius: 10px; border: 0; background: transparent; cursor: pointer; font-family: inherit;
+            font-size: 13px; font-weight: 500; color: var(--mute); text-decoration: none; transition: .16s;
         }
-        .ln-dropdown-icon svg { width: 20px; height: 20px; stroke: currentColor; }
+        .ln-hlink:hover { color: var(--ink); background: rgba(0,0,0,.05); }
+        .ln-hlogout:hover { color: var(--bad); background: rgba(208,74,74,.08); }
 
-        .ln-dropdown-divider {
-            height: 1px;
-            background: var(--ln-line);
-            margin: 6px 12px;
+        /* ===== Alerts & Main ===== */
+        .ln-alert { display: flex; gap: 11px; align-items: flex-start; padding: 12px 16px; border-radius: 14px; font-size: 13.5px; color: var(--ink);
+            background: var(--glass); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 0 0 .5px var(--hair), var(--shadow-s); }
+        .ln-alert::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--dot, var(--faint)); }
+        .ln-alert-success { --dot: var(--ok); }
+        .ln-alert-error { --dot: var(--bad); }
+        .ln-alert ul { margin: 0; padding-left: 16px; }
+
+        main { animation: ln-rise .35s ease both; }
+        @keyframes ln-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        
+        /* Jarak aman bawah agar konten tidak tertutup navbar */
+        main.ln-main { padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)); }
+
+        /* ===== NAVBAR BAWAH (Selalu di bawah) ===== */
+        .ln-tabbar {
+            position: fixed; z-index: 100; 
+            left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            height: 64px; padding: 6px; border-radius: 24px; 
+            display: grid; 
+            grid-template-columns: repeat(7, minmax(0, 1fr)); /* 6 Menu + 1 Lainnya */
+            gap: 2px;
+        }
+        .ln-ti {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; background: transparent; cursor: pointer;
+            border-radius: 18px; font-family: inherit; font-size: 9.5px; font-weight: 500; color: var(--faint); text-decoration: none; transition: .16s;
+        }
+        .ln-ti svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .ln-ti.active, .ln-ti.open { color: var(--ink); font-weight: 600; background: rgba(0,0,0,.06); }
+        
+        /* Tampilan Desktop: Navbar tetap di bawah, ukurannya membesar di tengah */
+        @media (min-width: 768px) {
+            .ln-tabbar {
+                left: 50%; right: auto;
+                width: min(720px, calc(100% - 32px));
+                transform: translateX(-50%);
+                bottom: 24px;
+            }
+            .ln-ti { font-size: 11px; }
+            .ln-ti svg { width: 22px; height: 22px; }
+            main.ln-main { padding-bottom: 8rem; }
+            .ln-company { max-width: 300px; } /* Desktop lebih lebar */
         }
 
-        /* ---- Shared content components ---- */
-        .ln-page-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 22px; }
-        .ln-page-title { font-family: 'Outfit', ui-sans-serif, sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.015em; color: var(--ln-navy); }
-        .ln-page-sub { font-size: 13px; color: var(--ln-ink-faint); margin-top: 3px; }
-
-        .ln-stat {
-            position: relative;
-            background: #FFFFFF;
-            border: 1px solid var(--ln-line);
-            border-radius: 14px;
-            padding: 16px 18px 17px;
-            overflow: hidden;
-            box-shadow: var(--ln-shadow-sm);
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        /* ===== Sheet "Lainnya" ===== */
+        .ln-bd { position: fixed; inset: 0; z-index: 98; background: rgba(0,0,0,.22); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        .ln-bd.open { opacity: 1; pointer-events: auto; }
+        .ln-sheet {
+            position: fixed; z-index: 99; left: 10px; right: 10px; 
+            bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* Di atas navbar */
+            max-height: calc(100vh - 170px); overflow-y: auto; border-radius: 26px;
+            background: rgba(255,255,255,.95); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l);
+            opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px) scale(.985);
+            transition: opacity .2s, transform .24s cubic-bezier(.2,.8,.2,1), visibility 0s linear .24s;
         }
-        .ln-stat:hover { transform: translateY(-2px); box-shadow: var(--ln-shadow-md); }
-        .ln-stat::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--ln-stat-accent, var(--ln-line)); }
+        .ln-sheet.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
+        .ln-grab { width: 38px; height: 4px; border-radius: 4px; background: var(--hair-2); margin: 9px auto 0; }
+        .ln-sg-wrap { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 14px 16px 6px; }
+        .ln-sg-t { margin: 0 0 6px; padding: 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+        .ln-sg ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+        .ln-sl { display: block; padding: 10px 12px; border-radius: 11px; font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; transition: background .14s; }
+        .ln-sl:hover { background: rgba(0,0,0,.05); }
+        .ln-sl.active { font-weight: 600; background: rgba(0,0,0,.07); }
+        .ln-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 14px 18px calc(14px); border-top: 1px solid var(--hair); }
+        .ln-sheet-foot .who { min-width: 0; }
+        .ln-sheet-foot .who b { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ln-sheet-foot .who span { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        @media (min-width: 768px) {
+            .ln-sheet {
+                left: 50%; right: auto; bottom: 104px;
+                width: min(780px, calc(100vw - 32px));
+                transform: translate(-50%, -8px) scale(.985);
+            }
+            .ln-sheet.open { transform: translate(-50%, 0); }
+            .ln-grab { display: none; }
+            .ln-sg-wrap { grid-template-columns: repeat(3, 1fr); gap: 20px 18px; padding: 20px 18px 8px; }
+            .ln-sg ul { grid-template-columns: 1fr; }
+        }
+
+        /* ===== Komponen Konten (Table, Form, dll) ===== */
+        .ln-page-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+        .ln-page-title { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.022em; color: var(--ink); }
+        .ln-page-sub { font-size: 13.5px; color: var(--mute); margin-top: 4px; }
+        .ln-section-title { font-size: 16px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); margin: 0 0 12px; }
+
+        .ln-stat, .ln-table-card, .ln-form-card {
+            background: var(--glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+            border: 1px solid rgba(255,255,255,.75); border-radius: 20px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-s);
+        }
+        .ln-stat { padding: 18px 20px; transition: transform .18s, box-shadow .18s; }
+        .ln-stat:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-m); }
         .ln-stat .top { display: flex; align-items: flex-start; justify-content: space-between; }
-        .ln-stat .lbl { font-size: 12px; font-weight: 500; color: var(--ln-ink-faint); }
-        .ln-stat .ico { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--ln-stat-tint, #F1F3F6); }
-        .ln-stat .ico svg { width: 15px; height: 15px; stroke: var(--ln-stat-accent, var(--ln-ink-faint)); }
-        .ln-stat .val { font-family: 'Outfit', ui-sans-serif, sans-serif; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; margin-top: 10px; color: var(--ln-navy); font-variant-numeric: tabular-nums; word-break: break-word; }
-        .ln-stat.kas { --ln-stat-accent: #1E7A4C; --ln-stat-tint: rgba(30,122,76,0.1); }
-        .ln-stat.bank { --ln-stat-accent: #1C8FC4; --ln-stat-tint: rgba(28,143,196,0.1); }
-        .ln-stat.akun { --ln-stat-accent: #B4915B; --ln-stat-tint: rgba(180,145,91,0.12); }
-        .ln-stat.jurnal { --ln-stat-accent: #14213A; --ln-stat-tint: rgba(20,33,58,0.07); }
-        .ln-stat.in { --ln-stat-accent: #1E7A4C; --ln-stat-tint: rgba(30,122,76,0.1); }
-        .ln-stat.out { --ln-stat-accent: #C0392B; --ln-stat-tint: rgba(192,57,43,0.1); }
+        .ln-stat .lbl { font-size: 12.5px; font-weight: 600; color: var(--mute); }
+        .ln-stat .ico { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: rgba(0,0,0,.05); }
+        .ln-stat .ico svg { width: 15px; height: 15px; stroke: var(--soft); }
+        .ln-stat .val { margin-top: 10px; font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); word-break: break-word; }
 
-        .ln-btn-primary {
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 9px 16px;
-            background: linear-gradient(180deg, #1B2C4B 0%, var(--ln-navy) 100%);
-            color: #fff; font-size: 13.5px; font-weight: 500;
-            border-radius: 10px;
-            box-shadow: 0 1px 2px rgba(16, 26, 48, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
+        .ln-btn-primary, .ln-btn-outline, .ln-btn-cancel {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 12px;
+            font-family: inherit; font-size: 13.5px; font-weight: 600; text-decoration: none; cursor: pointer; transition: .16s;
         }
-        .ln-btn-primary:hover { background: linear-gradient(180deg, #2AA0D6 0%, var(--ln-cyan) 100%); box-shadow: 0 6px 16px rgba(28, 143, 196, 0.3); }
-        .ln-btn-primary:active { transform: scale(0.98); }
-        .ln-btn-outline {
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 9px 16px; background: #fff; color: var(--ln-navy);
-            font-size: 13.5px; font-weight: 500;
-            border: 1px solid var(--ln-line); border-radius: 10px;
-            transition: all 0.15s ease;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .ln-btn-outline:hover { border-color: var(--ln-cyan); color: var(--ln-cyan); background: rgba(28, 143, 196, 0.03); }
-        .ln-btn-outline:active { transform: scale(0.98); }
+        .ln-btn-primary { color: #fff; border: 0; background: linear-gradient(180deg, #3A3A3C, #1D1D1F); box-shadow: 0 8px 18px -8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.18); }
+        .ln-btn-primary:hover { background: linear-gradient(180deg, #2C2C2E, #000); transform: translateY(-1px); }
+        .ln-btn-primary:active { transform: scale(.98); }
+        .ln-btn-outline, .ln-btn-cancel { color: var(--ink); background: rgba(255,255,255,.75); border: 1px solid var(--hair); }
+        .ln-btn-outline:hover, .ln-btn-cancel:hover { background: #fff; border-color: var(--hair-2); }
+        .ln-form-actions { display: flex; gap: 10px; padding-top: 6px; }
 
-        .ln-section-title { font-family: 'Outfit', ui-sans-serif, sans-serif; font-size: 15px; font-weight: 600; color: var(--ln-navy); margin-bottom: 12px; }
-
-        .ln-table-card {
-            background: #fff;
-            border: 1px solid var(--ln-line);
-            border-radius: 14px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            box-shadow: var(--ln-shadow-sm);
-        }
-        .ln-table { width: 100%; font-size: 13.5px; border-collapse: collapse; }
-        .ln-table thead th { text-align: left; font-size: 11px; letter-spacing: 0.04em; color: var(--ln-ink-faint); font-weight: 500; padding: 12px 16px; border-bottom: 1px solid var(--ln-line); background: #FBFBFA; white-space: nowrap; }
+        .ln-table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .ln-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .ln-table thead th { text-align: left; padding: 13px 18px; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--mute); background: rgba(0,0,0,.025); border-bottom: 1px solid var(--hair); white-space: nowrap; }
         .ln-table thead th.num { text-align: right; }
         .ln-table thead th.center { text-align: center; }
-        .ln-table tbody tr { transition: background 0.12s ease; }
-        .ln-table tbody tr:hover { background: #F8FAFC; }
-        .ln-table tbody td { padding: 13px 16px; border-bottom: 1px solid var(--ln-line); color: var(--ln-navy); }
-        .ln-table tbody tr:last-child td { border-bottom: none; }
-        .ln-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+        .ln-table tbody td { padding: 14px 18px; border-bottom: 1px solid var(--hair); color: var(--ink); }
+        .ln-table tbody tr { transition: background .14s; }
+        .ln-table tbody tr:hover { background: rgba(0,0,0,.03); }
+        .ln-table tbody tr:last-child td { border-bottom: 0; }
+        .ln-table tbody td.num { text-align: right; font-weight: 600; white-space: nowrap; }
         .ln-table tbody td.center { text-align: center; }
-        .ln-table a.ref { color: var(--ln-cyan); font-weight: 500; }
-        .ln-table a.ref:hover { color: var(--ln-navy); }
-        .ln-table td.empty { text-align: center; padding: 44px 14px; color: var(--ln-ink-faint); font-size: 13px; }
+        .ln-table a.ref { font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--hair-2); text-underline-offset: 3px; }
+        .ln-table a.ref:hover { text-decoration-color: var(--ink); }
+        .ln-table td.empty { text-align: center; padding: 48px 16px; color: var(--mute); }
 
-        .ln-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 500; }
-        .ln-badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-        .ln-badge.posted, .ln-badge.in, .ln-badge.paid, .ln-badge.active { background: rgba(30, 122, 76, 0.1); color: #1E7A4C; }
-        .ln-badge.draft, .ln-badge.partial { background: rgba(180, 145, 91, 0.14); color: #8A6B3B; }
-        .ln-badge.out, .ln-badge.unpaid, .ln-badge.expired { background: rgba(192, 57, 43, 0.1); color: #A93226; }
+        .ln-badge, .ln-type { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: capitalize; color: var(--soft); background: rgba(0,0,0,.05); }
+        .ln-badge::before, .ln-type::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dot, var(--faint)); }
+        .ln-badge.posted, .ln-badge.in, .ln-badge.paid, .ln-badge.active { --dot: var(--ok); }
+        .ln-badge.draft, .ln-badge.partial { --dot: var(--warn); }
+        .ln-badge.out, .ln-badge.unpaid, .ln-badge.expired { --dot: var(--bad); }
+        .ln-type { font-weight: 500; }
+        .ln-type.aset, .ln-type.asset { --dot: #8E8E93; }
+        .ln-type.kewajiban, .ln-type.liabilitas, .ln-type.liability { --dot: var(--bad); }
+        .ln-type.ekuitas, .ln-type.equity { --dot: var(--warn); }
+        .ln-type.pendapatan, .ln-type.revenue { --dot: var(--ok); }
+        .ln-type.beban, .ln-type.expense { --dot: #3A3A3C; }
+        .ln-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px; color: var(--soft); }
 
-        .ln-action { font-size: 12px; color: var(--ln-cyan); font-weight: 500; transition: color 0.15s ease; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; text-decoration: none; }
-        .ln-action:hover { color: var(--ln-navy); }
+        .ln-action { background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink); text-decoration: none; opacity: .85; transition: .15s; }
+        .ln-action:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
         .ln-action.green { color: #1E7A4C; }
-        .ln-action.green:hover { color: #14532D; }
-        .ln-action.red { color: #C0392B; }
-        .ln-action.red:hover { color: #8A2B22; }
-        .ln-action-sep { color: var(--ln-line); margin: 0 6px; }
-
+        .ln-action.red { color: #B5362F; }
+        .ln-action-sep { color: var(--hair-2); margin: 0 6px; }
         .ln-pagination { margin-top: 18px; }
         .ln-pagination nav { font-size: 13px; }
 
-        /* ---- Forms ---- */
-        .ln-form-card { background: #fff; border: 1px solid var(--ln-line); border-radius: 14px; padding: 22px; box-shadow: var(--ln-shadow-sm); }
-        .ln-label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ln-ink-soft); margin-bottom: 6px; }
+        .ln-form-card { padding: 24px; }
+        .ln-label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--mute); }
         .ln-input, .ln-textarea, .ln-select {
-            width: 100%; border: 1px solid var(--ln-line); border-radius: 10px;
-            padding: 9px 12px; font-size: 13.5px; color: var(--ln-navy); background: #fff;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            width: 100%; border: 1px solid var(--hair); border-radius: 12px; padding: 10px 14px; font-family: inherit; font-size: 13.5px; color: var(--ink);
+            background: rgba(255,255,255,.8); transition: .16s;
         }
-        .ln-input::placeholder, .ln-textarea::placeholder { color: #B3BBC9; }
-        .ln-input:focus, .ln-textarea:focus, .ln-select:focus {
-            outline: none;
-            border-color: var(--ln-cyan);
-            box-shadow: 0 0 0 4px rgba(28, 143, 196, 0.13);
-        }
-        .ln-input-sm { padding: 7px 9px; font-size: 13px; }
+        .ln-input::placeholder, .ln-textarea::placeholder { color: #B0B0B6; }
+        .ln-input:focus, .ln-textarea:focus, .ln-select:focus { outline: none; border-color: rgba(0,0,0,.4); box-shadow: 0 0 0 4px rgba(0,0,0,.06); background: #fff; }
+        .ln-input-sm { padding: 8px 10px; font-size: 13px; border-radius: 10px; }
+        .ln-checkbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--soft); }
+        .ln-checkbox input { width: 16px; height: 16px; accent-color: var(--ink); }
 
-        .ln-entries-table { width: 100%; font-size: 13.5px; border-collapse: collapse; }
-        .ln-entries-table thead th { text-align: left; font-size: 11px; letter-spacing: 0.04em; color: var(--ln-ink-faint); font-weight: 500; padding: 10px 8px; border-bottom: 1px solid var(--ln-line); background: #FBFBFA; }
+        .ln-entries-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .ln-entries-table thead th { text-align: left; padding: 12px 10px; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--mute); background: rgba(0,0,0,.03); border-bottom: 1px solid var(--hair); }
         .ln-entries-table thead th.num { text-align: right; }
-        .ln-entries-table tbody td { padding: 8px; border-bottom: 1px solid var(--ln-line); }
-        .ln-entries-table tfoot td { padding: 10px 8px; font-weight: 600; color: var(--ln-navy); background: #FBFBFA; font-variant-numeric: tabular-nums; }
+        .ln-entries-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--hair); }
+        .ln-entries-table tfoot td { padding: 12px 10px; font-weight: 700; background: rgba(0,0,0,.03); }
+        .ln-remove-btn { background: none; border: 0; cursor: pointer; font-size: 13px; color: var(--faint); transition: .15s; }
+        .ln-remove-btn:hover { color: var(--bad); }
+        .ln-add-row { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 12px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--soft); background: rgba(255,255,255,.6); border: 1px dashed var(--hair-2); cursor: pointer; transition: .16s; }
+        .ln-add-row:hover { color: var(--ink); background: #fff; border-style: solid; }
+        .ln-balance-ok { font-size: 13px; font-weight: 600; color: #1E7A4C; }
+        .ln-balance-bad { font-size: 13px; font-weight: 600; color: #B5362F; }
 
-        .ln-remove-btn { color: #C0392B; opacity: 0.75; font-size: 13px; background: none; border: none; transition: opacity 0.15s ease; cursor: pointer; }
-        .ln-remove-btn:hover { opacity: 1; }
-        .ln-add-row { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #fff; border: 1px dashed #CBD2DE; border-radius: 10px; font-size: 13px; color: var(--ln-ink-soft); transition: all 0.15s ease; cursor: pointer; font-family: inherit; }
-        .ln-add-row:hover { border-color: var(--ln-cyan); color: var(--ln-cyan); background: rgba(28, 143, 196, 0.03); }
-
-        .ln-balance-ok { color: #1E7A4C; font-size: 13px; font-weight: 500; }
-        .ln-balance-bad { color: #C0392B; font-size: 13px; font-weight: 500; }
-
-        .ln-form-actions { padding-top: 6px; display: flex; gap: 10px; }
-        .ln-btn-cancel { padding: 9px 16px; background: #fff; border: 1px solid var(--ln-line); border-radius: 10px; font-size: 13.5px; color: var(--ln-ink-soft); transition: all 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; }
-        .ln-btn-cancel:hover { color: var(--ln-navy); border-color: var(--ln-navy); }
-
-        /* ---- Account type badges (COA) ---- */
-        .ln-code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px; color: var(--ln-ink-soft); }
-        .ln-type { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; padding: 2px 9px; border-radius: 999px; text-transform: capitalize; }
-        .ln-type::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-        .ln-type.aset, .ln-type.asset { background: rgba(28,143,196,0.1); color: #1C8FC4; }
-        .ln-type.kewajiban, .ln-type.liabilitas, .ln-type.liability { background: rgba(192,57,43,0.1); color: #A93226; }
-        .ln-type.ekuitas, .ln-type.equity { background: rgba(180,145,91,0.14); color: #8A6B3B; }
-        .ln-type.pendapatan, .ln-type.revenue { background: rgba(30,122,76,0.1); color: #1E7A4C; }
-        .ln-type.beban, .ln-type.expense { background: rgba(20,33,58,0.08); color: #14213A; }
-
-        .ln-checkbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ln-ink-soft); }
-        .ln-checkbox input { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--ln-line); accent-color: var(--ln-navy); }
-
-        /* ---- AI Assistant ---- */
+        /* ===== Asisten AI ===== */
         .ln-ai-fab {
-            position: fixed;
-            right: 16px;
-            bottom: calc(90px + env(safe-area-inset-bottom, 0px));
-            z-index: 45;
-            width: 54px; height: 54px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--ln-navy) 0%, var(--ln-cyan) 100%);
-            color: #fff;
-            border: none;
-            box-shadow: 0 10px 28px rgba(20, 33, 58, 0.35), 0 2px 6px rgba(20, 33, 58, 0.2);
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: fixed; z-index: 90; 
+            right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* Di atas navbar */
+            width: 52px; height: 52px; border-radius: 50%;
+            display: grid; place-items: center; border: 0; cursor: pointer; color: #fff;
+            background: linear-gradient(180deg, #3A3A3C, #1D1D1F); box-shadow: 0 12px 28px -8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2);
+            transition: transform .18s, box-shadow .18s;
         }
-        .ln-ai-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 32px rgba(28, 143, 196, 0.45); }
-        .ln-ai-fab:active { transform: scale(0.96); }
-        .ln-ai-fab svg { width: 24px; height: 24px; }
-        .ln-ai-fab::after {
-            content: "";
-            position: absolute;
-            top: 4px; right: 4px;
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: #10B981;
-            border: 2px solid #fff;
-            animation: ln-pulse 2s ease-in-out infinite;
-        }
-        @keyframes ln-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        @media (min-width: 768px) {
-            .ln-ai-fab { bottom: 96px; right: 24px; }
-        }
+        .ln-ai-fab:hover { transform: translateY(-2px) scale(1.04); }
+        .ln-ai-fab:active { transform: scale(.96); }
+        .ln-ai-fab svg { width: 22px; height: 22px; }
 
         .ln-ai-panel {
-            position: fixed;
-            right: 16px;
-            bottom: calc(150px + env(safe-area-inset-bottom, 0px));
-            z-index: 44;
-            width: 380px;
-            max-width: calc(100vw - 32px);
-            height: 540px;
-            max-height: calc(100vh - 200px);
-            background: #fff;
-            border-radius: 18px;
-            box-shadow: var(--ln-shadow-lg);
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid var(--ln-line);
-            animation: ln-slide-up 0.25s ease;
+            position: fixed; z-index: 89; right: 16px; bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
+            width: 380px; max-width: calc(100vw - 32px);
+            height: 540px; max-height: calc(100vh - 220px); display: none; flex-direction: column; overflow: hidden; border-radius: 24px;
+            background: rgba(255,255,255,.95); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px);
+            border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l);
         }
-        .ln-ai-panel.open { display: flex; }
-        @keyframes ln-slide-up {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
-            to   { opacity: 1; transform: none; }
-        }
-        @media (min-width: 768px) {
-            .ln-ai-panel { bottom: 156px; right: 24px; }
-        }
-
-        .ln-ai-head {
-            background: linear-gradient(135deg, var(--ln-navy) 0%, var(--ln-cyan) 100%);
-            color: #fff;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .ln-ai-head-title { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 15px; }
-        .ln-ai-head-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
-        .ln-ai-close {
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: #fff;
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.15s ease;
-        }
-        .ln-ai-close:hover { background: rgba(255,255,255,0.28); }
-
-        .ln-ai-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            background: #F7F7F5;
-            font-size: 13.5px;
-            line-height: 1.55;
-            -webkit-overflow-scrolling: touch;
-        }
-        .ln-ai-msg {
-            margin-bottom: 12px;
-            padding: 10px 14px;
-            border-radius: 14px;
-            max-width: 88%;
-            word-wrap: break-word;
-            white-space: pre-line;
-            animation: ln-msg-in 0.2s ease;
-        }
-        @keyframes ln-msg-in {
-            from { opacity: 0; transform: translateY(4px); }
-            to   { opacity: 1; transform: none; }
-        }
-        .ln-ai-msg.user {
-            background: var(--ln-navy);
-            color: #fff;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-        .ln-ai-msg.assistant {
-            background: #fff;
-            border: 1px solid var(--ln-line);
-            border-bottom-left-radius: 4px;
-        }
+        .ln-ai-panel.open { display: flex; animation: ln-pop .24s ease; }
+        @keyframes ln-pop { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+        .ln-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--hair); }
+        .ln-ai-head-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+        .ln-ai-head-sub { margin-top: 2px; font-size: 12px; color: var(--mute); }
+        .ln-ai-close { width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer; font-size: 18px; line-height: 1; color: var(--soft); background: rgba(0,0,0,.06); transition: .15s; }
+        .ln-ai-close:hover { background: rgba(0,0,0,.12); color: var(--ink); }
+        .ln-ai-messages { flex: 1; overflow-y: auto; padding: 16px; font-size: 13.5px; line-height: 1.55; -webkit-overflow-scrolling: touch; }
+        .ln-ai-msg { max-width: 88%; margin-bottom: 10px; padding: 10px 14px; border-radius: 18px; word-wrap: break-word; white-space: pre-line; animation: ln-msg .2s ease; }
+        @keyframes ln-msg { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .ln-ai-msg.user { margin-left: auto; color: #fff; background: #1D1D1F; border-bottom-right-radius: 6px; }
+        .ln-ai-msg.assistant { background: #fff; border: 1px solid var(--hair); border-bottom-left-radius: 6px; }
         .ln-ai-msg .action { margin-top: 10px; }
-        .ln-ai-msg .action a {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: var(--ln-cyan);
-            color: #fff;
-            padding: 7px 13px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 500;
-            transition: background 0.15s ease;
-        }
-        .ln-ai-msg .action a:hover { background: var(--ln-navy); }
+        .ln-ai-msg .action a { display: inline-flex; padding: 7px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: none; background: #1D1D1F; transition: .15s; }
+        .ln-ai-msg .action a:hover { background: #000; }
         .ln-ai-typing { display: inline-flex; gap: 4px; padding: 4px 0; }
-        .ln-ai-typing span {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--ln-ink-faint);
-            animation: ln-dot 1.2s infinite;
-        }
-        .ln-ai-typing span:nth-child(2) { animation-delay: 0.15s; }
-        .ln-ai-typing span:nth-child(3) { animation-delay: 0.3s; }
-        @keyframes ln-dot {
-            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-2px); }
-        }
-
-        .ln-ai-chips {
-            padding: 8px 12px;
-            background: #fff;
-            border-top: 1px solid var(--ln-line);
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
+        .ln-ai-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: ln-dot 1.2s infinite; }
+        .ln-ai-typing span:nth-child(2) { animation-delay: .15s; }
+        .ln-ai-typing span:nth-child(3) { animation-delay: .3s; }
+        @keyframes ln-dot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-2px); } }
+        .ln-ai-chips { display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto; border-top: 1px solid var(--hair); scrollbar-width: none; }
         .ln-ai-chips::-webkit-scrollbar { display: none; }
-        .ln-ai-chips button {
-            white-space: nowrap;
-            background: #F7F7F5;
-            border: 1px solid var(--ln-line);
-            border-radius: 999px;
-            padding: 5px 12px;
-            font-size: 11.5px;
-            color: var(--ln-ink-soft);
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.15s ease;
-        }
-        .ln-ai-chips button:hover { background: rgba(28, 143, 196, 0.08); border-color: var(--ln-cyan); color: var(--ln-cyan); }
+        .ln-ai-chips button { flex: none; padding: 6px 13px; border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--soft); background: rgba(0,0,0,.05); border: 0; cursor: pointer; transition: .15s; white-space: nowrap; }
+        .ln-ai-chips button:hover { color: var(--ink); background: rgba(0,0,0,.1); }
+        .ln-ai-inputbar { display: flex; gap: 8px; padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hair); }
+        .ln-ai-inputbar input { flex: 1; min-width: 0; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--hair); background: rgba(255,255,255,.85); font-family: inherit; font-size: 13.5px; outline: none; transition: .16s; }
+        .ln-ai-inputbar input:focus { border-color: rgba(0,0,0,.4); box-shadow: 0 0 0 4px rgba(0,0,0,.06); background: #fff; }
+        .ln-ai-send { width: 46px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer; color: #fff; background: #1D1D1F; transition: .15s; }
+        .ln-ai-send:hover { background: #000; }
+        .ln-ai-send:active { transform: scale(.96); }
+        .ln-ai-send:disabled { opacity: .45; cursor: not-allowed; }
 
-        .ln-ai-inputbar {
-            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
-            border-top: 1px solid var(--ln-line);
-            display: flex;
-            gap: 8px;
-            background: #fff;
+        @media (min-width: 768px) {
+            .ln-ai-fab { right: 24px; bottom: 110px; }
+            .ln-ai-panel { right: 24px; bottom: 180px; }
         }
-        .ln-ai-inputbar input {
-            flex: 1;
-            border: 1px solid var(--ln-line);
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 13.5px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        .ln-ai-inputbar input:focus { border-color: var(--ln-cyan); box-shadow: 0 0 0 4px rgba(28, 143, 196, 0.13); }
-        .ln-ai-send {
-            background: var(--ln-cyan);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 0 18px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.15s ease, transform 0.1s ease;
-        }
-        .ln-ai-send:hover { background: var(--ln-navy); }
-        .ln-ai-send:active { transform: scale(0.96); }
-        .ln-ai-send:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* ---- Mobile ---- */
         @media (max-width: 640px) {
             .ln-input, .ln-textarea, .ln-select { font-size: 16px; }
             .ln-input-sm { font-size: 15px; }
-            .ln-page-title { font-size: 21px; }
+            .ln-page-title { font-size: 23px; }
             .ln-form-card { padding: 18px; }
-            .ln-company { max-width: 120px; }
             .ln-ai-inputbar input { font-size: 16px; }
-            .ln-navitem { font-size: 9.5px; }
-            .ln-navitem svg { width: 19px; height: 19px; }
+            .ln-bar { height: 52px; padding-left: 14px; }
+            .ln-company { font-size: 11px; padding: 4px 10px; }
         }
-
         @media (prefers-reduced-motion: reduce) {
             main, .ln-ai-panel, .ln-ai-msg { animation: none; }
-            * { transition-duration: 0.01ms !important; }
+            * { transition-duration: .01ms !important; }
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-<header class="ln-header sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
-        <a href="{{ route('dashboard') }}" class="ln-brand">
-            <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+<a href="#konten" class="ln-skip">Lewati ke konten</a>
+
+<header class="ln-header">
+    <div class="ln-bar glass">
+        <a href="{{ route('dashboard') }}" class="ln-brand" aria-label="LedgerNusa — ke Dashboard">
+            <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa" decoding="async">
         </a>
-        <div class="flex items-center gap-1.5 sm:gap-3">
-            @php $activeCompany = auth()->user()->activeCompany(); @endphp
+
+        <div class="ln-right">
             @if($activeCompany)
-                <span class="ln-company">{{ $activeCompany->name }}</span>
+                <!-- Bagian yang diubah ada di CSS class .ln-company -->
+                <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">{{ $activeCompany->name }}</a>
             @endif
             @if(auth()->user()->isSuperAdmin())
-                <a href="{{ route('super-admin.dashboard') }}" class="ln-link" style="color:#B45309;">⚙ Admin</a>
+                <a href="{{ route('super-admin.dashboard') }}" class="ln-hlink">Admin</a>
             @endif
-            <a href="{{ route('companies.index') }}" class="ln-link">Company</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button class="ln-logout">Logout</button>
+                <button class="ln-hlogout">Logout</button>
             </form>
         </div>
     </div>
 </header>
 
 @if(session('trial_days') !== null && session('trial_days') <= 5)
-    <div class="ln-trial">
-        ⏰ Trial Anda tersisa <strong>{{ session('trial_days') }} hari</strong>.
-        <a href="{{ route('subscription.index') }}">Perpanjang sekarang</a>
+    <div class="ln-trial" style="text-align: center; margin-top: 10px;">
+        <div class="glass" style="display: inline-block; padding: 10px 20px; border-radius: 12px; font-size: 13px;">
+            <span>Trial Anda tersisa <strong>{{ session('trial_days') }} hari</strong>.</span>
+            <a href="{{ route('subscription.index') }}" style="font-weight: 600; text-decoration: underline; margin-left: 5px;">Perpanjang sekarang</a>
+        </div>
     </div>
 @endif
 
-<main class="ln-main max-w-6xl mx-auto px-4 py-6">
+<main id="konten" class="ln-main max-w-6xl mx-auto px-4 py-6">
     @if(session('success'))
-        <div class="ln-alert ln-alert-success mb-4">{{ session('success') }}</div>
+        <div class="ln-alert ln-alert-success mb-4" role="status">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="ln-alert ln-alert-error mb-4">{{ session('error') }}</div>
+        <div class="ln-alert ln-alert-error mb-4" role="alert">{{ session('error') }}</div>
     @endif
     @if($errors->any())
-        <div class="ln-alert ln-alert-error mb-4">
-            <ul class="list-disc list-inside">
+        <div class="ln-alert ln-alert-error mb-4" role="alert">
+            <ul>
                 @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
             </ul>
         </div>
@@ -719,233 +465,58 @@
     @yield('content')
 </main>
 
-{{-- Backdrop dropdown --}}
-<div class="ln-dropdown-backdrop" id="lnDdBackdrop" onclick="lnToggleMore()"></div>
-
-{{-- Dropdown "Lainnya" --}}
-<div class="ln-dropdown" id="lnDdMenu" role="menu" aria-label="Menu Lainnya">
-
-    {{-- GRUP 1: TRANSAKSI --}}
-    <div class="ln-dropdown-header">Transaksi</div>
-    <div class="ln-dropdown-grid">
-        <a href="{{ route('cash.index') }}" class="ln-dropdown-item {{ request()->routeIs('cash.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#1E7A4C,#2FA36B);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/><path d="M6 6.5V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5"/></svg>
-            </span>
-            Kas & Bank
+{{-- NAVBAR BAWAH (7 Menu) --}}
+<nav class="ln-tabbar glass" aria-label="Menu utama">
+    @foreach($navMain as [$label, $route, $match, $icon])
+        @php $on = $isOn($match); @endphp
+        <a href="{{ route($route) }}" class="ln-ti {{ $on ? 'active' : '' }}" @if($on) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" aria-hidden="true">{!! $icon !!}</svg>
+            {{ $label }}
         </a>
-        <a href="{{ route('bank-rec.index') }}" class="ln-dropdown-item {{ request()->routeIs('bank-rec.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0E7490,#06B6D4);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.91.37 4.16 1.03"/><path d="M16 5l5-3-1 5"/></svg>
-            </span>
-            Rekonsiliasi
-        </a>
-        <a href="{{ route('transfers.index') }}" class="ln-dropdown-item {{ request()->routeIs('transfers.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#1C8FC4,#4FC3EC);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/><path d="M10 6 4 12l6 6"/></svg>
-            </span>
-            Transfer
-        </a>
-        <a href="{{ route('sales-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('sales-orders.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C3AED,#A855F7);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
-            </span>
-            Sales Order
-        </a>
-        <a href="{{ route('delivery-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('delivery-orders.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0891B2,#22D3EE);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            </span>
-            Delivery
-        </a>
-        <a href="{{ route('sales.index') }}" class="ln-dropdown-item {{ request()->routeIs('sales.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#B4915B,#D4A870);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            </span>
-            Penjualan
-        </a>
-        <a href="{{ route('purchase-orders.index') }}" class="ln-dropdown-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#BE123C,#FB7185);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
-            </span>
-            Purchase Order
-        </a>
-        <a href="{{ route('goods-receipts.index') }}" class="ln-dropdown-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#16A34A,#4ADE80);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-            </span>
-            Penerimaan
-        </a>
-        <a href="{{ route('purchases.index') }}" class="ln-dropdown-item {{ request()->routeIs('purchases.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#DC2626,#F87171);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-            </span>
-            Pembelian
-        </a>
-        <a href="{{ route('customers.index') }}" class="ln-dropdown-item {{ request()->routeIs('customers.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C3AED,#A855F7);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3 2.8-4.6 5.5-4.6s4.7 1.6 5.5 4.6"/></svg>
-            </span>
-            Customer
-        </a>
-        <a href="{{ route('suppliers.index') }}" class="ln-dropdown-item {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0891B2,#22D3EE);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-            </span>
-            Supplier
-        </a>
-    </div>
-
-    <div class="ln-dropdown-divider"></div>
-
-    {{-- GRUP 2: PERSEDIAAN --}}
-    <div class="ln-dropdown-header">Persediaan</div>
-    <div class="ln-dropdown-grid">
-        <a href="{{ route('products.index') }}" class="ln-dropdown-item {{ request()->routeIs('products.*','product-categories.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#F59E0B,#FBBF24);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-            </span>
-            Produk
-        </a>
-        <a href="{{ route('stock.index') }}" class="ln-dropdown-item {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#10B981);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg>
-            </span>
-            Mutasi Stok
-        </a>
-        <a href="{{ route('warehouses.index') }}" class="ln-dropdown-item {{ request()->routeIs('warehouses.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0284C7,#38BDF8);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
-            </span>
-            Gudang
-        </a>
-        <a href="{{ route('product-categories.index') }}" class="ln-dropdown-item {{ request()->routeIs('product-categories.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#9333EA,#C084FC);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </span>
-            Kategori
-        </a>
-    </div>
-
-    <div class="ln-dropdown-divider"></div>
-
-    {{-- GRUP 3: AKUNTANSI --}}
-    <div class="ln-dropdown-header">Akuntansi</div>
-    <div class="ln-dropdown-grid">
-        <a href="{{ route('fixed-assets.index') }}" class="ln-dropdown-item {{ request()->routeIs('fixed-assets.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0F766E,#14B8A6);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
-            </span>
-            Aset Tetap
-        </a>
-        <a href="{{ route('tax.index') }}" class="ln-dropdown-item {{ request()->routeIs('tax.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C2D12,#EA580C);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 1 0-4h4"/><path d="M9 11v2"/><path d="M15 7h4a2 2 0 0 1 0 4h-4"/><path d="M15 7v10"/><path d="M9 13v4"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg>
-            </span>
-            Pajak
-        </a>
-        <a href="{{ route('employees.index') }}" class="ln-dropdown-item {{ request()->routeIs('employees.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#4338CA,#6366F1);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </span>
-            Karyawan
-        </a>
-        <a href="{{ route('payrolls.index') }}" class="ln-dropdown-item {{ request()->routeIs('payrolls.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#C026D3,#E879F9);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-            </span>
-            Payroll
-        </a>
-        <a href="{{ route('contacts.index') }}" class="ln-dropdown-item {{ request()->routeIs('contacts.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0EA5E9,#38BDF8);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg>
-            </span>
-            Kontak
-        </a>
-    </div>
-
-    <div class="ln-dropdown-divider"></div>
-
-    {{-- GRUP 4: SISTEM --}}
-    <div class="ln-dropdown-header">Sistem</div>
-    <div class="ln-dropdown-grid">
-        <a href="{{ route('invitations.index') }}" class="ln-dropdown-item {{ request()->routeIs('invitations.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#059669,#34D399);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11v6"/><path d="M19 14h6"/></svg>
-            </span>
-            Undang User
-        </a>
-        <a href="{{ route('companies.index') }}" class="ln-dropdown-item {{ request()->routeIs('companies.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#5B6577,#8B96A9);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.8 6.2l-1.6 1.6M7.8 16.2l-1.6 1.6M17.8 17.8l-1.6-1.6M7.8 7.8 6.2 6.2"/></svg>
-            </span>
-            Setting
-        </a>
-        <a href="{{ route('profile.edit') }}" class="ln-dropdown-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#EC4899,#F472B6);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>
-            </span>
-            Profil
-        </a>
-        {{-- MULTI-CURRENCY --}}
-        <a href="{{ route('settings.currencies.index') }}" class="ln-dropdown-item {{ request()->routeIs('settings.currencies.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#0E7490,#22D3EE);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.8 0-3 .9-3 2s1 1.8 3 2 3 1 3 2-1.2 2-3 2c-1.4 0-2.5-.5-3-1.5"/><path d="M12 6v1.5M12 16.5V18"/></svg>
-            </span>
-            Currencies
-        </a>
-        <a href="{{ route('settings.exchange-rates.index') }}" class="ln-dropdown-item {{ request()->routeIs('settings.exchange-rates.*') ? 'active' : '' }}">
-            <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#7C2D12,#F59E0B);">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="m14 6 6 6-6 6"/><path d="M10 6 4 12l6 6"/></svg>
-            </span>
-            Kurs
-        </a>
-        <form method="POST" action="{{ route('logout') }}" style="display:contents;">
-            @csrf
-            <button type="submit" class="ln-dropdown-item" style="color:#C0392B;">
-                <span class="ln-dropdown-icon" style="background:linear-gradient(135deg,#DC2626,#EF4444);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-                </span>
-                Logout
-            </button>
-        </form>
-    </div>
-</div>
-
-<nav class="ln-navbar">
-    <a href="{{ route('dashboard') }}" class="ln-navitem {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/></svg>
-        Dashboard
-    </a>
-    <a href="{{ route('cash.index') }}" class="ln-navitem {{ request()->routeIs('cash.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/><path d="M6 6.5V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.5"/></svg>
-        Kas
-    </a>
-    <a href="{{ route('sales.index') }}" class="ln-navitem {{ request()->routeIs('sales.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        Penjualan
-    </a>
-    <a href="{{ route('subscription.index') }}" class="ln-navitem {{ request()->routeIs('subscription.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>
-        Langganan
-    </a>
-    <a href="{{ route('journals.index') }}" class="ln-navitem {{ request()->routeIs('journals.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17.5V7.5a3 3 0 0 1 3-3"/><path d="M9 9h7M9 12.5h7"/></svg>
-        Jurnal
-    </a>
-    <a href="{{ route('reports.index') }}" class="ln-navitem {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/></svg>
-        Laporan
-    </a>
-    <button type="button" class="ln-navitem has-dropdown {{ request()->routeIs('accounts.*','transfers.*','customers.*','suppliers.*','purchases.*','contacts.*','companies.*','profile.*','fixed-assets.*','tax.*','products.*','product-categories.*','warehouses.*','stock.*','bank-rec.*','sales-orders.*','delivery-orders.*','purchase-orders.*','goods-receipts.*','employees.*','payrolls.*','invitations.*','settings.currencies.*','settings.exchange-rates.*') ? 'active' : '' }}" onclick="lnToggleMore()" id="lnMoreBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+    @endforeach
+    <button type="button" class="ln-ti js-more {{ $moreActiveMob ? 'active' : '' }}" aria-haspopup="dialog" aria-expanded="false" aria-controls="lnDdMenu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/></svg>
         Lainnya
     </button>
 </nav>
 
-{{-- ==================== AI ASSISTANT ==================== --}}
+{{-- Menu "Lainnya" --}}
+<div class="ln-bd" id="lnDdBackdrop"></div>
+<div class="ln-sheet" id="lnDdMenu" role="dialog" aria-modal="true" aria-label="Menu lainnya" inert>
+    <div class="ln-grab" aria-hidden="true"></div>
+
+    <div class="ln-sg-wrap">
+        @foreach($lnMore as $group => $items)
+            @php $visible = collect($items)->filter(fn($i) => Route::has($i[1])); @endphp
+            @if($visible->isNotEmpty())
+                <section class="ln-sg">
+                    <p class="ln-sg-t">{{ $group }}</p>
+                    <ul>
+                        @foreach($visible as [$label, $route, $match])
+                            @php $on = $isOn($match); @endphp
+                            <li><a href="{{ route($route) }}" class="ln-sl {{ $on ? 'active' : '' }}" @if($on) aria-current="page" @endif>{{ $label }}</a></li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
+        @endforeach
+    </div>
+
+    <div class="ln-sheet-foot">
+        <div class="who">
+            <b>{{ auth()->user()->name }}</b>
+            <span>{{ auth()->user()->email }}</span>
+        </div>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="ln-btn-outline">Logout</button>
+        </form>
+    </div>
+</div>
+
+{{-- ==================== ASISTEN AI ==================== --}}
 <button type="button" class="ln-ai-fab" onclick="lnAiToggle()" title="Tanya Asisten LedgerNusa" aria-label="Buka Asisten AI">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
     </svg>
 </button>
@@ -956,10 +527,10 @@
             <div class="ln-ai-head-title">Asisten LedgerNusa</div>
             <div class="ln-ai-head-sub">Tanya apa saja soal akuntansi</div>
         </div>
-        <button type="button" class="ln-ai-close" onclick="lnAiToggle()" aria-label="Tutup">✕</button>
+        <button type="button" class="ln-ai-close" onclick="lnAiToggle()" aria-label="Tutup">×</button>
     </div>
 
-    <div class="ln-ai-messages" id="lnAiMessages"></div>
+    <div class="ln-ai-messages" id="lnAiMessages" aria-live="polite"></div>
 
     <div class="ln-ai-chips" id="lnAiChips">
         <button type="button" onclick="lnAiQuick('Cara input jurnal?')">Cara input jurnal?</button>
@@ -970,56 +541,57 @@
     </div>
 
     <div class="ln-ai-inputbar">
-        <input type="text" id="lnAiInput" placeholder="Ketik pertanyaan..." autocomplete="off"
+        <input type="text" id="lnAiInput" placeholder="Ketik pertanyaan..." autocomplete="off" aria-label="Pertanyaan"
                onkeypress="if(event.key==='Enter'){event.preventDefault();lnAiSend();}">
         <button type="button" class="ln-ai-send" id="lnAiSend" onclick="lnAiSend()" aria-label="Kirim">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
         </button>
     </div>
 </div>
 
 <script>
-// ===== Dropdown "Lainnya" =====
-window.lnToggleMore = function() {
+// ===== Menu "Lainnya" =====
+(function () {
     const menu = document.getElementById('lnDdMenu');
-    const backdrop = document.getElementById('lnDdBackdrop');
-    const btn = document.getElementById('lnMoreBtn');
-    const isOpen = menu.classList.contains('open');
-    if (isOpen) {
-        menu.classList.remove('open');
-        backdrop.classList.remove('open');
-        btn.classList.remove('open');
-    } else {
-        menu.classList.add('open');
-        backdrop.classList.add('open');
-        btn.classList.add('open');
-    }
-};
+    const bd = document.getElementById('lnDdBackdrop');
+    const btns = [...document.querySelectorAll('.js-more')];
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const menu = document.getElementById('lnDdMenu');
-        if (menu && menu.classList.contains('open')) lnToggleMore();
+    function setOpen(open) {
+        menu.classList.toggle('open', open);
+        bd.classList.toggle('open', open);
+        if (open) menu.removeAttribute('inert'); else menu.setAttribute('inert', '');
+        btns.forEach(b => { b.classList.toggle('open', open); b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+        document.documentElement.classList.toggle('ln-lock', open);
     }
-});
 
-// ===== AI Assistant =====
-(function() {
+    window.lnToggleMore = function () { setOpen(!menu.classList.contains('open')); };
+    btns.forEach(b => b.addEventListener('click', window.lnToggleMore));
+    bd.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && menu.classList.contains('open')) {
+            setOpen(false);
+            const b = btns.find(x => x.offsetParent !== null);
+            if (b) b.focus();
+        }
+    });
+})();
+
+// ===== Asisten AI =====
+(function () {
     let convId = null;
     let greeted = false;
     const ENDPOINT = @json(route('ai.chat'));
     const CSRF = @json(csrf_token());
 
-    window.lnAiToggle = function() {
+    window.lnAiToggle = function () {
         const panel = document.getElementById('lnAiPanel');
-        const isOpen = panel.classList.contains('open');
-        if (isOpen) {
+        if (panel.classList.contains('open')) {
             panel.classList.remove('open');
         } else {
             panel.classList.add('open');
             if (!greeted) {
                 greeted = true;
-                lnAiAddMsg('Halo! 👋 Saya asisten LedgerNusa.<br>Ada yang bisa saya bantu?', 'assistant');
+                lnAiAddMsg('Halo! Saya asisten LedgerNusa.<br>Ada yang bisa saya bantu?', 'assistant');
             }
             setTimeout(() => document.getElementById('lnAiInput').focus(), 150);
         }
@@ -1037,15 +609,14 @@ document.addEventListener('keydown', function(e) {
         box.scrollTop = box.scrollHeight;
         return div;
     }
-
     window.lnAiAddMsg = lnAiAddMsg;
 
-    window.lnAiQuick = function(text) {
+    window.lnAiQuick = function (text) {
         document.getElementById('lnAiInput').value = text;
         lnAiSend();
     };
 
-    window.lnAiSend = async function() {
+    window.lnAiSend = async function () {
         const input = document.getElementById('lnAiInput');
         const btn = document.getElementById('lnAiSend');
         const msg = input.value.trim();
@@ -1056,11 +627,7 @@ document.addEventListener('keydown', function(e) {
         btn.disabled = true;
 
         lnAiAddMsg(msg.replace(/</g, '&lt;'), 'user');
-
-        const typing = lnAiAddMsg(
-            '<span class="ln-ai-typing"><span></span><span></span><span></span></span>',
-            'assistant'
-        );
+        const typing = lnAiAddMsg('<span class="ln-ai-typing"><span></span><span></span><span></span></span>', 'assistant');
 
         try {
             const res = await fetch(ENDPOINT, {
@@ -1073,13 +640,11 @@ document.addEventListener('keydown', function(e) {
                 },
                 body: JSON.stringify({ message: msg, conversation_id: convId })
             });
-
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
 
             typing.remove();
             convId = data.conversation_id;
-
             const answerHtml = (data.answer || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
             lnAiAddMsg(answerHtml, 'assistant', data.action_url, data.action_label);
         } catch (e) {

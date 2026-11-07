@@ -1,8 +1,9 @@
 <?php
+
 namespace Database\Seeders;
 
+use App\Models\Plan;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class PlanSeeder extends Seeder
 {
@@ -12,47 +13,70 @@ class PlanSeeder extends Seeder
             [
                 'code' => 'starter',
                 'name' => 'Starter',
-                'description' => 'Untuk usaha kecil yang baru mulai',
-                'price_monthly' => 149000,
-                'price_yearly' => 1490000,
-                'max_users' => 3,
-                'max_journals_per_month' => 500,
+                'description' => 'Untuk UMKM & freelance — 1 user, 1 perusahaan, fitur dasar',
+                'price_monthly' => 175000,
+                'price_yearly' => 1890000,
+                'duration_days' => 30,
+                'max_users' => 1,
                 'max_companies' => 1,
-                'features' => json_encode(['Laporan dasar', 'Multi-user basic']),
+                'max_journals_per_month' => 100,
                 'sort_order' => 1,
+                'is_active' => true,
+                'features' => [
+                    'coa' => true, 'journals' => true, 'cash_bank' => true, 'transfers' => true,
+                    'sales' => true, 'purchases' => true, 'reports_basic' => true,
+                    'aging' => false, 'inventory' => false, 'orders' => false, 'bank_rec' => false,
+                    'multi_currency' => false, 'fixed_assets' => false, 'payroll' => false, 'tax' => false,
+                    'export' => false, 'ai' => false, 'audit_log' => false,
+                    'consolidation' => false, 'budgeting' => false, 'efaktur' => false, 'midtrans' => false,
+                ],
             ],
             [
-                'code' => 'pro',
+                'code' => 'professional',
                 'name' => 'Professional',
-                'description' => 'Untuk usaha yang sedang berkembang',
-                'price_monthly' => 399000,
-                'price_yearly' => 3990000,
-                'max_users' => 10,
-                'max_journals_per_month' => 5000,
+                'description' => 'Untuk bisnis berkembang — 5 user, 3 perusahaan, semua fitur',
+                'price_monthly' => 375000,
+                'price_yearly' => 4050000,
+                'duration_days' => 30,
+                'max_users' => 5,
                 'max_companies' => 3,
-                'features' => json_encode(['Semua laporan', 'Approval jurnal', 'Audit log']),
+                'max_journals_per_month' => 5000,
                 'sort_order' => 2,
+                'is_active' => true,
+                'features' => [
+                    'coa' => true, 'journals' => true, 'cash_bank' => true, 'transfers' => true,
+                    'sales' => true, 'purchases' => true, 'reports_basic' => true,
+                    'aging' => true, 'inventory' => true, 'orders' => true, 'bank_rec' => true,
+                    'multi_currency' => true, 'fixed_assets' => true, 'payroll' => true, 'tax' => true,
+                    'export' => true, 'ai' => true, 'audit_log' => true,
+                    'consolidation' => false, 'budgeting' => false, 'efaktur' => false, 'midtrans' => false,
+                ],
             ],
             [
                 'code' => 'enterprise',
                 'name' => 'Enterprise',
-                'description' => 'Untuk korporasi & multi-cabang',
-                'price_monthly' => 1500000,
-                'price_yearly' => 15000000,
-                'max_users' => -1,
-                'max_journals_per_month' => -1,
-                'max_companies' => -1,
-                'features' => json_encode(['Unlimited', 'API', 'Support prioritas']),
+                'description' => 'Untuk grup perusahaan — unlimited user & company, semua fitur + prioritas support',
+                'price_monthly' => 600000,
+                'price_yearly' => 6480000,
+                'duration_days' => 60,
+                'max_users' => 999999,
+                'max_companies' => 999999,
+                'max_journals_per_month' => 999999,
                 'sort_order' => 3,
+                'is_active' => true,
+                'features' => [
+                    'coa' => true, 'journals' => true, 'cash_bank' => true, 'transfers' => true,
+                    'sales' => true, 'purchases' => true, 'reports_basic' => true,
+                    'aging' => true, 'inventory' => true, 'orders' => true, 'bank_rec' => true,
+                    'multi_currency' => true, 'fixed_assets' => true, 'payroll' => true, 'tax' => true,
+                    'export' => true, 'ai' => true, 'audit_log' => true,
+                    'consolidation' => true, 'budgeting' => true, 'efaktur' => true, 'midtrans' => true,
+                ],
             ],
         ];
 
-        foreach ($plans as $p) {
-            DB::table('plans')->updateOrInsert(['code' => $p['code']], array_merge($p, [
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]));
+        foreach ($plans as $plan) {
+            Plan::updateOrCreate(['code' => $plan['code']], $plan);
         }
     }
 }

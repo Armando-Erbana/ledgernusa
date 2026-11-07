@@ -11,6 +11,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboard;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenant;
+use App\Http\Controllers\SuperAdmin\PaymentProofController;
 use App\Http\Controllers\Setting\CurrencyController;
 use App\Http\Controllers\Setting\ExchangeRateController;
 use Illuminate\Support\Facades\Route;
@@ -23,108 +24,43 @@ Route::get('/', function () {
 });
 
 // =========================================================
+// INVITATION PUBLIC (tanpa auth)
+// =========================================================
+Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])
+    ->name('invitations.accept');
+
+// =========================================================
 // GRUP 1: Auth + Active Company (TANPA cek subscription)
 // Bisa diakses walau langganan expired
 // =========================================================
-Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])->name('invitations.accept');
 Route::middleware(['auth', 'active.company'])->group(function () {
 
-    // Subscription
+    // ============ Subscription ============
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/expired', [SubscriptionController::class, 'expired'])->name('subscription.expired');
-        // ============ Persediaan ============
-    Route::resource('product-categories', \App\Http\Controllers\ProductCategoryController::class)->except(['create', 'show', 'edit']);
-    Route::resource('products', \App\Http\Controllers\ProductController::class);
-    Route::resource('warehouses', \App\Http\Controllers\WarehouseController::class)->except(['create', 'show', 'edit']);
-    Route::resource('stock', \App\Http\Controllers\StockMovementController::class)->except(['show', 'edit', 'update']);
+    Route::post('/subscription/upload-proof', [SubscriptionController::class, 'uploadProof'])->name('subscription.upload-proof');
+    Route::delete('/subscription/proof/{proof}', [SubscriptionController::class, 'deleteProof'])->name('subscription.delete-proof');
 
-        Route::prefix('reports')->name('reports.')->group(function () {
-        // ... route yang sudah ada
-        Route::get('/aging-piutang', [\App\Http\Controllers\AgingReportController::class, 'piutang'])->name('aging-piutang');
-        Route::get('/aging-hutang', [\App\Http\Controllers\AgingReportController::class, 'hutang'])->name('aging-hutang');
-    });
-
-    Route::middleware(['auth'])->prefix('settings')->name('settings.')->group(function () {
-    Route::resource('currencies', CurrencyController::class);
-
-    Route::resource('exchange-rates', ExchangeRateController::class)
-        ->only(['index', 'store', 'destroy']);
-
-    Route::get('exchange-rates/fetch', [ExchangeRateController::class, 'fetchRate'])
-        ->name('exchange-rates.fetch');
-});
-
-        // ============ Undang User ============
-    Route::get('/invitations', [\App\Http\Controllers\InvitationController::class, 'index'])->name('invitations.index');
-    Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
-    Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
-
-        // ============ Audit Trail ============
-    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
-    Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
-    
-        // Export
-    Route::prefix('export')->name('export.')->group(function () {
-        Route::get('/income-statement-pdf', [\App\Http\Controllers\ExportController::class, 'incomeStatementPdf'])->name('income-statement-pdf');
-        Route::get('/balance-sheet-pdf', [\App\Http\Controllers\ExportController::class, 'balanceSheetPdf'])->name('balance-sheet-pdf');
-        Route::get('/trial-balance-pdf', [\App\Http\Controllers\ExportController::class, 'trialBalancePdf'])->name('trial-balance-pdf');
-        Route::get('/sales-excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])->name('sales-excel');
-        Route::get('/purchases-excel', [\App\Http\Controllers\ExportController::class, 'purchasesExcel'])->name('purchases-excel');
-    });
-    
-    // Company
+    // ============ Company ============
     Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
     Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
     Route::get('/companies/switch/{id}', [CompanyController::class, 'switch'])->name('companies.switch');
 
-    // Profile (Breeze)
+    // ============ Profile (Breeze) ============
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-        // ============ Rekonsiliasi Bank ============
-    Route::prefix('bank-rec')->name('bank-rec.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\BankReconciliationController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\BankReconciliationController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\BankReconciliationController::class, 'store'])->name('store');
-        Route::get('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'show'])->name('show');
-        Route::post('/{bankRec}/auto-match', [\App\Http\Controllers\BankReconciliationController::class, 'autoMatch'])->name('auto-match');
-        Route::post('/{bankRec}/lines/{line}/match', [\App\Http\Controllers\BankReconciliationController::class, 'matchLine'])->name('lines.match');
-        Route::post('/{bankRec}/lines/{line}/unmatch', [\App\Http\Controllers\BankReconciliationController::class, 'unmatchLine'])->name('lines.unmatch');
-        Route::post('/{bankRec}/lines/{line}/exclude', [\App\Http\Controllers\BankReconciliationController::class, 'excludeLine'])->name('lines.exclude');
-        Route::post('/{bankRec}/finalize', [\App\Http\Controllers\BankReconciliationController::class, 'finalize'])->name('finalize');
-        Route::delete('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'destroy'])->name('destroy');
-    });
+    // ============ Undang User ============
+    Route::get('/invitations', [\App\Http\Controllers\InvitationController::class, 'index'])->name('invitations.index');
+    Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
+    Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
 
-        // ============ Sales Order ============
-    Route::resource('sales-orders', \App\Http\Controllers\SalesOrderController::class);
-    Route::post('/sales-orders/{salesOrder}/confirm', [\App\Http\Controllers\SalesOrderController::class, 'confirm'])->name('sales-orders.confirm');
-
-    // ============ Delivery Order ============
-    Route::resource('delivery-orders', \App\Http\Controllers\DeliveryOrderController::class)->except(['edit', 'update']);
-    Route::post('/delivery-orders/{deliveryOrder}/deliver', [\App\Http\Controllers\DeliveryOrderController::class, 'deliver'])->name('delivery-orders.deliver');
-    Route::post('/delivery-orders/{deliveryOrder}/create-invoice', [\App\Http\Controllers\DeliveryOrderController::class, 'createInvoice'])->name('delivery-orders.create-invoice');
-
-        // ============ Purchase Order ============
-    Route::resource('purchase-orders', \App\Http\Controllers\PurchaseOrderController::class);
-    Route::post('/purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
-
-    // ============ Goods Receipt ============
-    Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->except(['edit', 'update']);
-    Route::post('/goods-receipts/{goodsReceipt}/receive', [\App\Http\Controllers\GoodsReceiptController::class, 'receive'])->name('goods-receipts.receive');
-    Route::post('/goods-receipts/{goodsReceipt}/create-bill', [\App\Http\Controllers\GoodsReceiptController::class, 'createBill'])->name('goods-receipts.create-bill');
-
-        // ============ Karyawan ============
-    Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
-
-    // ============ Payroll ============
-    Route::resource('payrolls', \App\Http\Controllers\PayrollController::class)->except(['edit', 'update']);
-    Route::post('/payrolls/{payroll}/post', [\App\Http\Controllers\PayrollController::class, 'post'])->name('payrolls.post');
-    Route::post('/payrolls/{payroll}/mark-paid', [\App\Http\Controllers\PayrollController::class, 'markPaid'])->name('payrolls.mark-paid');
-    Route::get('/payrolls/{payroll}/items/{item}/slip', [\App\Http\Controllers\PayrollController::class, 'slipGaji'])->name('payrolls.slip');
+    // ============ Audit Trail ============
+    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
 });
-
 
 // =========================================================
 // GRUP 2: Auth + Active Company + Subscription check
@@ -132,10 +68,10 @@ Route::middleware(['auth', 'active.company'])->group(function () {
 // =========================================================
 Route::middleware(['auth', 'active.company', 'subscription'])->group(function () {
 
-    // Dashboard
+    // ============ Dashboard ============
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // AI Assistant
+    // ============ AI Assistant ============
     Route::post('/ai/chat', [AiAssistantController::class, 'chat'])->name('ai.chat');
 
     // ============ COA ============
@@ -174,6 +110,15 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
         Route::delete('/{transfer}', [\App\Http\Controllers\TransferController::class, 'destroy'])->name('destroy');
     });
 
+    // ============ Multi-Currency Settings ============
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::resource('currencies', CurrencyController::class);
+        Route::resource('exchange-rates', ExchangeRateController::class)
+            ->only(['index', 'store', 'destroy']);
+        Route::get('exchange-rates/fetch', [ExchangeRateController::class, 'fetchRate'])
+            ->name('exchange-rates.fetch');
+    });
+
     // ============ Customer ============
     Route::resource('customers', \App\Http\Controllers\CustomerController::class);
 
@@ -190,6 +135,53 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
     Route::get('/purchases/{purchase}/payment', [\App\Http\Controllers\PurchasePaymentController::class, 'create'])->name('purchases.payment.create');
     Route::post('/purchases/{purchase}/payment', [\App\Http\Controllers\PurchasePaymentController::class, 'store'])->name('purchases.payment.store');
 
+    // ============ Sales Order ============
+    Route::resource('sales-orders', \App\Http\Controllers\SalesOrderController::class);
+    Route::post('/sales-orders/{salesOrder}/confirm', [\App\Http\Controllers\SalesOrderController::class, 'confirm'])->name('sales-orders.confirm');
+
+    // ============ Delivery Order ============
+    Route::resource('delivery-orders', \App\Http\Controllers\DeliveryOrderController::class)->except(['edit', 'update']);
+    Route::post('/delivery-orders/{deliveryOrder}/deliver', [\App\Http\Controllers\DeliveryOrderController::class, 'deliver'])->name('delivery-orders.deliver');
+    Route::post('/delivery-orders/{deliveryOrder}/create-invoice', [\App\Http\Controllers\DeliveryOrderController::class, 'createInvoice'])->name('delivery-orders.create-invoice');
+
+    // ============ Purchase Order ============
+    Route::resource('purchase-orders', \App\Http\Controllers\PurchaseOrderController::class);
+    Route::post('/purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+
+    // ============ Goods Receipt ============
+    Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->except(['edit', 'update']);
+    Route::post('/goods-receipts/{goodsReceipt}/receive', [\App\Http\Controllers\GoodsReceiptController::class, 'receive'])->name('goods-receipts.receive');
+    Route::post('/goods-receipts/{goodsReceipt}/create-bill', [\App\Http\Controllers\GoodsReceiptController::class, 'createBill'])->name('goods-receipts.create-bill');
+
+    // ============ Persediaan ============
+    Route::resource('product-categories', \App\Http\Controllers\ProductCategoryController::class)->except(['create', 'show', 'edit']);
+    Route::resource('products', \App\Http\Controllers\ProductController::class);
+    Route::resource('warehouses', \App\Http\Controllers\WarehouseController::class)->except(['create', 'show', 'edit']);
+    Route::resource('stock', \App\Http\Controllers\StockMovementController::class)->except(['show', 'edit', 'update']);
+
+    // ============ Karyawan ============
+    Route::resource('employees', \App\Http\Controllers\EmployeeController::class);
+
+    // ============ Payroll ============
+    Route::resource('payrolls', \App\Http\Controllers\PayrollController::class)->except(['edit', 'update']);
+    Route::post('/payrolls/{payroll}/post', [\App\Http\Controllers\PayrollController::class, 'post'])->name('payrolls.post');
+    Route::post('/payrolls/{payroll}/mark-paid', [\App\Http\Controllers\PayrollController::class, 'markPaid'])->name('payrolls.mark-paid');
+    Route::get('/payrolls/{payroll}/items/{item}/slip', [\App\Http\Controllers\PayrollController::class, 'slipGaji'])->name('payrolls.slip');
+
+    // ============ Rekonsiliasi Bank ============
+    Route::prefix('bank-rec')->name('bank-rec.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BankReconciliationController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\BankReconciliationController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\BankReconciliationController::class, 'store'])->name('store');
+        Route::get('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'show'])->name('show');
+        Route::post('/{bankRec}/auto-match', [\App\Http\Controllers\BankReconciliationController::class, 'autoMatch'])->name('auto-match');
+        Route::post('/{bankRec}/lines/{line}/match', [\App\Http\Controllers\BankReconciliationController::class, 'matchLine'])->name('lines.match');
+        Route::post('/{bankRec}/lines/{line}/unmatch', [\App\Http\Controllers\BankReconciliationController::class, 'unmatchLine'])->name('lines.unmatch');
+        Route::post('/{bankRec}/lines/{line}/exclude', [\App\Http\Controllers\BankReconciliationController::class, 'excludeLine'])->name('lines.exclude');
+        Route::post('/{bankRec}/finalize', [\App\Http\Controllers\BankReconciliationController::class, 'finalize'])->name('finalize');
+        Route::delete('/{bankRec}', [\App\Http\Controllers\BankReconciliationController::class, 'destroy'])->name('destroy');
+    });
+
     // ============ Laporan ============
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
@@ -197,6 +189,17 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
         Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');
         Route::get('/income-statement', [ReportController::class, 'incomeStatement'])->name('income-statement');
         Route::get('/balance-sheet', [ReportController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/aging-piutang', [\App\Http\Controllers\AgingReportController::class, 'piutang'])->name('aging-piutang');
+        Route::get('/aging-hutang', [\App\Http\Controllers\AgingReportController::class, 'hutang'])->name('aging-hutang');
+    });
+
+    // ============ Export ============
+    Route::prefix('export')->name('export.')->group(function () {
+        Route::get('/income-statement-pdf', [\App\Http\Controllers\ExportController::class, 'incomeStatementPdf'])->name('income-statement-pdf');
+        Route::get('/balance-sheet-pdf', [\App\Http\Controllers\ExportController::class, 'balanceSheetPdf'])->name('balance-sheet-pdf');
+        Route::get('/trial-balance-pdf', [\App\Http\Controllers\ExportController::class, 'trialBalancePdf'])->name('trial-balance-pdf');
+        Route::get('/sales-excel', [\App\Http\Controllers\ExportController::class, 'salesExcel'])->name('sales-excel');
+        Route::get('/purchases-excel', [\App\Http\Controllers\ExportController::class, 'purchasesExcel'])->name('purchases-excel');
     });
 
     // ============ Aset Tetap ============
@@ -226,8 +229,10 @@ Route::middleware(['auth', 'super.admin'])
     ->prefix('super-admin')
     ->name('super-admin.')
     ->group(function () {
+
         Route::get('/', [SuperAdminDashboard::class, 'index'])->name('dashboard');
 
+        // ============ Tenants ============
         Route::get('/tenants', [SuperAdminTenant::class, 'index'])->name('tenants.index');
         Route::get('/tenants/{tenant}', [SuperAdminTenant::class, 'show'])->name('tenants.show');
 
@@ -236,6 +241,15 @@ Route::middleware(['auth', 'super.admin'])
         Route::post('/tenants/{tenant}/change-plan', [SuperAdminTenant::class, 'changePlan'])->name('tenants.change-plan');
         Route::post('/tenants/{tenant}/suspend', [SuperAdminTenant::class, 'suspend'])->name('tenants.suspend');
         Route::post('/tenants/{tenant}/reactivate', [SuperAdminTenant::class, 'reactivate'])->name('tenants.reactivate');
+
+        // ============ Payment Proofs (Verifikasi Pembayaran Manual) ============
+        Route::prefix('payment-proofs')->name('payment-proofs.')->group(function () {
+            Route::get('/', [PaymentProofController::class, 'index'])->name('index');
+            Route::get('/{proof}', [PaymentProofController::class, 'show'])->name('show');
+            Route::post('/{proof}/approve', [PaymentProofController::class, 'approve'])->name('approve');
+            Route::post('/{proof}/reject', [PaymentProofController::class, 'reject'])->name('reject');
+            Route::get('/{proof}/download', [PaymentProofController::class, 'download'])->name('download');
+        });
     });
 
 require __DIR__.'/auth.php';

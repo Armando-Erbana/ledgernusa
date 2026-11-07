@@ -88,10 +88,25 @@
     </div>
 </form>
 
+{{-- Ambil data di PHP agar Blade tidak error saat parsing JSON --}}
+@php
+    $revAccs = $revenueAccounts->map(function($a) {
+        return ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name];
+    });
+
+    $prodList = \App\Models\Product::where('company_id', session('company_id'))
+        ->where('is_active', true)
+        ->get(['id', 'code', 'name', 'sell_price']);
+
+    $whList = \App\Models\Warehouse::where('company_id', session('company_id'))
+        ->where('is_active', true)
+        ->get(['id', 'name', 'is_default']);
+@endphp
+
 <script>
-const revenueAccounts = @json($revenueAccounts->map(fn($a) => ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name]));
-const products = @json(\App\Models\Product::where('company_id', session('company_id'))->where('is_active', true)->get(['id','code','name','sell_price']));
-const warehouses = @json(\App\Models\Warehouse::where('company_id', session('company_id'))->where('is_active', true)->get(['id','name','is_default']));
+const revenueAccounts = @json($revAccs);
+const products = @json($prodList);
+const warehouses = @json($whList);
 const body = document.getElementById('itemBody');
 
 function addRow() {
