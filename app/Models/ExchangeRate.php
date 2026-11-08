@@ -18,7 +18,7 @@ class ExchangeRate extends Model
 
     protected $casts = [
         'effective_date' => 'date',
-        'rate' => 'decimal:8',
+        'rate' => 'float',
     ];
 
     public function company(): BelongsTo
@@ -26,10 +26,32 @@ class ExchangeRate extends Model
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * Filter berdasarkan company + pasangan mata uang.
+     * Input otomatis di-uppercase agar konsisten.
+     */
     public function scopeForPair($query, int $companyId, string $from, string $to)
     {
         return $query->where('company_id', $companyId)
-            ->where('from_currency', $from)
-            ->where('to_currency', $to);
+            ->where('from_currency', strtoupper($from))
+            ->where('to_currency', strtoupper($to));
+    }
+
+    /**
+     * Urutkan kurs terbaru untuk pasangan tertentu.
+     */
+    public function scopeLatestRate($query, int $companyId, string $from, string $to)
+    {
+        return $query->forPair($companyId, $from, $to)
+            ->orderByDesc('effective_date')
+            ->orderByDesc('id');
+    }
+
+    /**
+     * Ambil kurs terbaru, atau null jika belum ada.
+     */
+    public static function findLatest(int $companyId, string $from, string $to): ?self
+    {
+        return static::latestRate($companyId, $from, $to)->first();
     }
 }

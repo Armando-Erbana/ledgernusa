@@ -9,17 +9,17 @@
         ?: 'LedgerNusa adalah aplikasi akuntansi online untuk jurnal, buku besar, kas & bank, penjualan, pembelian, persediaan, dan laporan keuangan usaha Anda.';
     $lnRobots    = trim($__env->yieldContent('robots')) ?: 'noindex, nofollow';
 
-    /* ---------- Menu utama (7 Item) ---------- */
+    /* ---------- Menu utama (dock bawah) ---------- */
     $navMain = [
-        ['Dashboard', 'dashboard',          'dashboard',        '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/>'],
-        ['Kas',       'cash.index',         'cash.*',           '<rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/>'],
-        ['Penjualan', 'sales.index',        'sales.*',          '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'],
-        ['Langganan', 'subscription.index', 'subscription.*',   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>'],
-        ['Jurnal',    'journals.index',     'journals.*',       '<path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/>'],
-        ['Laporan',   'reports.index',      'reports.*',        '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'],
+        ['Dashboard', 'dashboard',          'dashboard',      '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/>'],
+        ['Kas',       'cash.index',         'cash.*',         '<rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/>'],
+        ['Penjualan', 'sales.index',        'sales.*',        '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'],
+        ['Langganan', 'subscription.index', 'subscription.*', '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>'],
+        ['Jurnal',    'journals.index',     'journals.*',     '<path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/>'],
+        ['Laporan',   'reports.index',      'reports.*',      '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'],
     ];
 
-    /* ---------- Menu "Lainnya" (teks saja, tanpa ikon) ---------- */
+    /* ---------- Menu "Lainnya" (teks saja) ---------- */
     $lnMore = [
         'Kas & Bank' => [
             ['Kas & Bank',      'cash.index',                    'cash.*'],
@@ -61,17 +61,17 @@
         ],
     ];
 
-    $isOn = fn($m) => request()->routeIs(...(array) $m);
-    $mainOnAll    = collect($navMain)->contains(fn($n) => $isOn($n[2]));
-    $moreOn       = collect($lnMore)->flatten(1)->contains(fn($i) => $isOn($i[2]));
-    $moreActiveMob  = $moreOn && ! $mainOnAll;
-
+    $isOn          = fn($m) => request()->routeIs(...(array) $m);
+    $mainOnAll     = collect($navMain)->contains(fn($n) => $isOn($n[2]));
+    $moreOn        = collect($lnMore)->flatten(1)->contains(fn($i) => $isOn($i[2]));
+    $moreActive    = $moreOn && ! $mainOnAll;
     $activeCompany = auth()->user()->activeCompany();
 @endphp
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="color-scheme" content="light">
 
     <title>{{ $lnTitleFull }}</title>
     <meta name="description" content="{{ $lnDesc }}">
@@ -104,11 +104,17 @@
         :root {
             --ink: #1D1D1F; --soft: #515154; --mute: #6E6E73; --faint: #86868B;
             --hair: rgba(0,0,0,.08); --hair-2: rgba(0,0,0,.14);
-            --glass: rgba(255,255,255,.85);
+            --glass: rgba(255,255,255,.78);
             --shadow-s: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px -8px rgba(0,0,0,.10);
             --shadow-m: 0 2px 6px rgba(0,0,0,.05), 0 18px 44px -16px rgba(0,0,0,.18);
             --shadow-l: 0 24px 70px -20px rgba(0,0,0,.38);
-            --ok: #2E9E6B; --warn: #C98A1B; --bad: #D04A4A;
+            --ok: #2E9E6B; --warn: #C98A1B; --bad: #D04A4A;   /* hanya titik status kecil */
+            --dock-h: 62px; --dock-gap: 14px;
+
+            /* nama lama, supaya halaman yang belum diredesain tetap benar */
+            --ln-navy: #1D1D1F; --ln-navy-deep: #000; --ln-cyan: #2C2C2E; --ln-cyan-bright: #6E6E73; --ln-brass: #8E8E93;
+            --ln-paper: #ECECEF; --ln-line: var(--hair); --ln-ink-soft: var(--mute); --ln-ink-faint: var(--faint);
+            --ln-shadow-sm: var(--shadow-s); --ln-shadow-md: var(--shadow-m); --ln-shadow-lg: var(--shadow-l);
         }
         * { box-sizing: border-box; }
         html { -webkit-text-size-adjust: 100%; scroll-padding-top: 90px; }
@@ -127,53 +133,51 @@
         }
         a { color: inherit; -webkit-tap-highlight-color: transparent; }
         :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 8px; }
-        .ln-skip { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; transition: top .15s; }
+        .ln-skip { position: absolute; left: 12px; top: -60px; z-index: 200; padding: 10px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; transition: top .15s; }
         .ln-skip:focus { top: 12px; }
 
-        /* ===== Glass dasar ===== */
+        /* ===== Glass ===== */
         .glass {
             background: var(--glass);
             -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px);
-            border: 1px solid rgba(255,255,255,.75);
+            border: 1px solid rgba(255,255,255,.78);
             box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-m);
         }
-
-        /* ===== Header (Hanya Logo & Profile) ===== */
-        .ln-header { position: sticky; top: 0; z-index: 40; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 0; }
-        .ln-bar { max-width: 1152px; margin: 0 auto; height: 56px; padding: 0 12px 0 18px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between; }
-        .ln-brand { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
-        .ln-brand img { height: 26px; width: auto; display: block; }
-
-        .ln-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
-        
-        /* UPDATE: Nama perusahaan dibuat agar bisa turun baris (wrap) */
-        .ln-company {
-            display: inline-block; 
-            max-width: 55vw; /* Batasi maksimal lebar agar tidak menabrak logo */
-            white-space: normal; /* Biarkan turun baris jika panjang */
-            text-align: center;
-            line-height: 1.2;
-            padding: 6px 14px; 
-            border-radius: 12px; /* Ubah dari 999px ke 12px agar jika jadi 2 baris tetap rapi */
-            font-size: 12.5px; 
-            font-weight: 500; 
-            color: var(--soft); 
-            text-decoration: none;
-            background: rgba(255,255,255,.7); 
-            border: 1px solid var(--hair); 
-            transition: .16s;
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+            .glass, .ln-stat, .ln-table-card, .ln-form-card, .ln-alert, .ln-sheet { background: rgba(250,250,252,.97); }
         }
-        
+
+        /* ===== Header: logo + perusahaan + akun ===== */
+        .ln-header { position: sticky; top: 0; z-index: 40; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 0; }
+        .ln-bar { max-width: 1152px; margin: 0 auto; min-height: 56px; padding: 8px 12px 8px 18px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .ln-brand { display: flex; align-items: center; flex: none; text-decoration: none; }
+        .ln-brand img { height: 26px; width: auto; display: block; }
+        .ln-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
+        .ln-right form { margin: 0; }
+        .ln-company {
+            display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
+            max-width: min(46vw, 320px); padding: 6px 14px; border-radius: 12px; text-align: center; line-height: 1.25;
+            font-size: 12.5px; font-weight: 500; color: var(--soft); text-decoration: none;
+            background: rgba(255,255,255,.7); border: 1px solid var(--hair); transition: .16s;
+        }
+        .ln-company:hover { background: #fff; color: var(--ink); }
         .ln-hlink, .ln-hlogout {
             padding: 7px 11px; border-radius: 10px; border: 0; background: transparent; cursor: pointer; font-family: inherit;
-            font-size: 13px; font-weight: 500; color: var(--mute); text-decoration: none; transition: .16s;
+            font-size: 13px; font-weight: 500; color: var(--mute); text-decoration: none; transition: .16s; white-space: nowrap;
         }
         .ln-hlink:hover { color: var(--ink); background: rgba(0,0,0,.05); }
         .ln-hlogout:hover { color: var(--bad); background: rgba(208,74,74,.08); }
 
-        /* ===== Alerts & Main ===== */
+        /* ===== Trial ===== */
+        .ln-trial { max-width: 1152px; margin: 12px auto 0; padding: 0 16px; }
+        .ln-trial > div { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; text-align: center; padding: 11px 16px; border-radius: 14px; font-size: 13px; color: var(--soft); }
+        .ln-trial strong { color: var(--ink); }
+        .ln-trial a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+        /* ===== Alerts & main ===== */
         .ln-alert { display: flex; gap: 11px; align-items: flex-start; padding: 12px 16px; border-radius: 14px; font-size: 13.5px; color: var(--ink);
-            background: var(--glass); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 0 0 .5px var(--hair), var(--shadow-s); }
+            background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+            border: 1px solid rgba(255,255,255,.78); box-shadow: 0 0 0 .5px var(--hair), var(--shadow-s); }
         .ln-alert::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--dot, var(--faint)); }
         .ln-alert-success { --dot: var(--ok); }
         .ln-alert-error { --dot: var(--bad); }
@@ -181,77 +185,125 @@
 
         main { animation: ln-rise .35s ease both; }
         @keyframes ln-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-        
-        /* Jarak aman bawah agar konten tidak tertutup navbar */
-        main.ln-main { padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)); }
+        main.ln-main { padding-bottom: calc(var(--dock-h) + var(--dock-gap) + 3.5rem + env(safe-area-inset-bottom, 0px)); }
 
-        /* ===== NAVBAR BAWAH (Selalu di bawah) ===== */
+        /* ===== DOCK BAWAH =====
+           Mobile : ikon tipis, hanya menu aktif yang menampilkan nama
+           Desktop: teks saja, tanpa ikon */
         .ln-tabbar {
-            position: fixed; z-index: 100; 
-            left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-            height: 64px; padding: 6px; border-radius: 24px; 
-            display: grid; 
-            grid-template-columns: repeat(7, minmax(0, 1fr)); /* 6 Menu + 1 Lainnya */
-            gap: 2px;
+            position: fixed; z-index: 100; left: 12px; right: 12px;
+            bottom: calc(var(--dock-gap) + env(safe-area-inset-bottom, 0px));
+            height: var(--dock-h); padding: 6px; border-radius: 26px; display: flex; gap: 2px;
         }
         .ln-ti {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; background: transparent; cursor: pointer;
-            border-radius: 18px; font-family: inherit; font-size: 9.5px; font-weight: 500; color: var(--faint); text-decoration: none; transition: .16s;
+            position: relative; flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center;
+            border: 0; border-radius: 20px; background: transparent; cursor: pointer; overflow: hidden; white-space: nowrap;
+            font-family: inherit; font-size: 12px; font-weight: 600; color: var(--faint); text-decoration: none;
+            transition: flex-grow .3s cubic-bezier(.2,.8,.2,1), background .2s, color .2s;
         }
-        .ln-ti svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-        .ln-ti.active, .ln-ti.open { color: var(--ink); font-weight: 600; background: rgba(0,0,0,.06); }
-        
-        /* Tampilan Desktop: Navbar tetap di bawah, ukurannya membesar di tengah */
-        @media (min-width: 768px) {
-            .ln-tabbar {
-                left: 50%; right: auto;
-                width: min(720px, calc(100% - 32px));
-                transform: translateX(-50%);
-                bottom: 24px;
-            }
-            .ln-ti { font-size: 11px; }
-            .ln-ti svg { width: 22px; height: 22px; }
-            main.ln-main { padding-bottom: 8rem; }
-            .ln-company { max-width: 300px; } /* Desktop lebih lebar */
+        .ln-ti svg { flex: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+        .ln-ti .lbl { max-width: 0; margin-left: 0; opacity: 0; overflow: hidden; transition: max-width .3s cubic-bezier(.2,.8,.2,1), margin .3s, opacity .2s; }
+        .ln-ti:hover { color: var(--ink); }
+        .ln-ti.active, .ln-ti.open { flex-grow: 2.7; color: var(--ink); background: rgba(0,0,0,.07); }
+        .ln-ti.active .lbl, .ln-ti.open .lbl { max-width: 84px; margin-left: 6px; opacity: 1; }
+        /* saat menu "Lainnya" terbuka, hanya "Lainnya" yang aktif */
+        .ln-tabbar.more-open .ln-ti.active:not(.open) { flex-grow: 1; color: var(--faint); background: transparent; }
+        .ln-tabbar.more-open .ln-ti.active:not(.open) .lbl { max-width: 0; margin-left: 0; opacity: 0; }
+
+        @media (min-width: 640px) {
+            :root { --dock-h: 54px; --dock-gap: 22px; }
+            .ln-tabbar { left: 50%; right: auto; width: min(680px, calc(100% - 32px)); transform: translateX(-50%); border-radius: 22px; }
+            .ln-ti svg { display: none; }
+            .ln-ti .lbl, .ln-ti.active .lbl, .ln-ti.open .lbl { max-width: none; margin: 0; opacity: 1; }
+            .ln-ti, .ln-ti.active, .ln-ti.open { flex-grow: 1; font-size: 13px; font-weight: 500; border-radius: 16px; }
+            .ln-ti.active, .ln-ti.open { font-weight: 600; background: rgba(255,255,255,.95); box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 0 0 .5px var(--hair); }
+            .ln-ti:not(.active):not(.open):hover { background: rgba(0,0,0,.05); }
+            .ln-tabbar.more-open .ln-ti.active:not(.open) { color: var(--faint); background: transparent; box-shadow: none; }
+            .ln-tabbar.more-open .ln-ti.active:not(.open) .lbl { max-width: none; opacity: 1; }
+            .ln-company { max-width: 320px; }
         }
 
-        /* ===== Sheet "Lainnya" ===== */
-        .ln-bd { position: fixed; inset: 0; z-index: 98; background: rgba(0,0,0,.22); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        /* ===== Menu "Lainnya" ===== */
+        .ln-bd { position: fixed; inset: 0; z-index: 98; background: rgba(0,0,0,.2); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
         .ln-bd.open { opacity: 1; pointer-events: auto; }
+        .ln-sheet [hidden] { display: none !important; }
+
         .ln-sheet {
-            position: fixed; z-index: 99; left: 10px; right: 10px; 
-            bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* Di atas navbar */
-            max-height: calc(100vh - 170px); overflow-y: auto; border-radius: 26px;
-            background: rgba(255,255,255,.95); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l);
+            position: fixed; z-index: 99; left: 10px; right: 10px;
+            bottom: calc(var(--dock-h) + var(--dock-gap) + 12px + env(safe-area-inset-bottom, 0px));
+            display: flex; flex-direction: column; overflow: hidden; outline: none;
+            max-height: calc(100vh - 190px); max-height: calc(100dvh - 190px);
+            border-radius: 28px;
+            background: rgba(255,255,255,.9);
+            -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
+            border: 1px solid rgba(255,255,255,.8);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l);
             opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(14px) scale(.985);
-            transition: opacity .2s, transform .24s cubic-bezier(.2,.8,.2,1), visibility 0s linear .24s;
+            transition: opacity .2s, transform .26s cubic-bezier(.2,.8,.2,1), visibility 0s linear .26s;
         }
         .ln-sheet.open { opacity: 1; visibility: visible; pointer-events: auto; transform: none; transition-delay: 0s; }
-        .ln-grab { width: 38px; height: 4px; border-radius: 4px; background: var(--hair-2); margin: 9px auto 0; }
-        .ln-sg-wrap { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 14px 16px 6px; }
-        .ln-sg-t { margin: 0 0 6px; padding: 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-        .ln-sg ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-        .ln-sl { display: block; padding: 10px 12px; border-radius: 11px; font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; transition: background .14s; }
-        .ln-sl:hover { background: rgba(0,0,0,.05); }
-        .ln-sl.active { font-weight: 600; background: rgba(0,0,0,.07); }
-        .ln-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 14px 18px calc(14px); border-top: 1px solid var(--hair); }
-        .ln-sheet-foot .who { min-width: 0; }
+        .ln-grab { flex: none; width: 38px; height: 4px; border-radius: 4px; background: var(--hair-2); margin: 9px auto 0; }
+
+        /* kepala + pencarian (tetap di atas saat scroll) */
+        .ln-sh-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px 20px; }
+        .ln-sh-title { font-size: 17px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+        .ln-sh-close { width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer; font-size: 18px; line-height: 1; color: var(--soft); background: rgba(0,0,0,.06); transition: .15s; }
+        .ln-sh-close:hover { background: rgba(0,0,0,.12); color: var(--ink); }
+        .ln-sh-search { flex: none; padding: 6px 16px 10px; }
+        .ln-sh-search input {
+            width: 100%; height: 42px; padding: 0 14px; border: 0; border-radius: 13px; outline: none;
+            font-family: inherit; font-size: 16px; color: var(--ink); background: rgba(0,0,0,.055); transition: .16s;
+        }
+        .ln-sh-search input::placeholder { color: var(--faint); }
+        .ln-sh-search input:focus { background: #fff; box-shadow: 0 0 0 .5px var(--hair-2), 0 0 0 4px rgba(0,0,0,.06); }
+
+        /* daftar menu (area yang scroll) */
+        .ln-sh-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 4px 16px 12px; }
+        .ln-sg-wrap { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        .ln-sg-t { margin: 0 0 8px; padding: 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+        .ln-sg ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .ln-sl {
+            display: block; padding: 12px 14px; border-radius: 14px; font-size: 14px; font-weight: 500; line-height: 1.25;
+            color: var(--ink); text-decoration: none; background: rgba(0,0,0,.045); transition: background .14s, color .14s;
+        }
+        .ln-sl:hover { background: rgba(0,0,0,.09); }
+        /* PERUBAHAN: Blok hitam jadi biru */
+        .ln-sl.active { color: #fff; font-weight: 600; background: linear-gradient(180deg, #2563EB, #1E3A8A); }
+        .ln-sh-empty { margin: 0; padding: 36px 20px 44px; text-align: center; font-size: 13.5px; color: var(--mute); }
+
+        /* kaki: akun + logout */
+        .ln-sheet-foot { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--hair); }
+        .ln-av { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; color: var(--ink); background: rgba(0,0,0,.07); }
+        .ln-sheet-foot .who { flex: 1; min-width: 0; }
         .ln-sheet-foot .who b { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ln-sheet-foot .who span { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ln-sheet-foot form { margin: 0; flex: none; }
+        .ln-sheet-foot .ln-btn-outline { height: 36px; padding: 0 14px; font-size: 13px; }
 
-        @media (min-width: 768px) {
+        @media (min-width: 640px) {
             .ln-sheet {
-                left: 50%; right: auto; bottom: 104px;
-                width: min(780px, calc(100vw - 32px));
-                transform: translate(-50%, -8px) scale(.985);
+                left: 50%; right: auto; width: min(840px, calc(100vw - 32px));
+                max-height: calc(100vh - 170px); max-height: calc(100dvh - 170px);
+                transform: translate(-50%, 10px) scale(.985);
             }
             .ln-sheet.open { transform: translate(-50%, 0); }
             .ln-grab { display: none; }
-            .ln-sg-wrap { grid-template-columns: repeat(3, 1fr); gap: 20px 18px; padding: 20px 18px 8px; }
-            .ln-sg ul { grid-template-columns: 1fr; }
+            .ln-sh-head { padding: 18px 18px 4px 26px; }
+            .ln-sh-search { padding: 8px 24px 14px; }
+            .ln-sh-search input { font-size: 14px; }
+            .ln-sh-scroll { padding: 4px 24px 18px; }
+            .ln-sg-wrap { grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
+            .ln-sg { padding: 10px 8px 8px; border-radius: 20px; background: rgba(255,255,255,.55); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair); }
+            .ln-sg-t { padding: 2px 10px 8px; }
+            .ln-sg ul { grid-template-columns: 1fr; gap: 1px; }
+            .ln-sl { padding: 9px 10px; border-radius: 11px; background: transparent; }
+            .ln-sl:hover { background: rgba(0,0,0,.06); }
+            /* PERUBAHAN: Blok hitam jadi biru */
+            .ln-sl.active { background: linear-gradient(180deg, #2563EB, #1E3A8A); }
+            .ln-sheet-foot { padding: 14px 24px; }
         }
 
-        /* ===== Komponen Konten (Table, Form, dll) ===== */
+        /* ===== Komponen konten (dipakai halaman lama) ===== */
         .ln-page-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
         .ln-page-title { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.022em; color: var(--ink); }
         .ln-page-sub { font-size: 13.5px; color: var(--mute); margin-top: 4px; }
@@ -259,7 +311,7 @@
 
         .ln-stat, .ln-table-card, .ln-form-card {
             background: var(--glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
-            border: 1px solid rgba(255,255,255,.75); border-radius: 20px;
+            border: 1px solid rgba(255,255,255,.78); border-radius: 20px;
             box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-s);
         }
         .ln-stat { padding: 18px 20px; transition: transform .18s, box-shadow .18s; }
@@ -343,22 +395,22 @@
 
         /* ===== Asisten AI ===== */
         .ln-ai-fab {
-            position: fixed; z-index: 90; 
-            right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); /* Di atas navbar */
-            width: 52px; height: 52px; border-radius: 50%;
-            display: grid; place-items: center; border: 0; cursor: pointer; color: #fff;
-            background: linear-gradient(180deg, #3A3A3C, #1D1D1F); box-shadow: 0 12px 28px -8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2);
-            transition: transform .18s, box-shadow .18s;
+            position: fixed; z-index: 90; right: 14px;
+            bottom: calc(var(--dock-h) + var(--dock-gap) + 14px + env(safe-area-inset-bottom, 0px));
+            width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 0; cursor: pointer; color: #fff;
+            background: linear-gradient(180deg, #3A3A3C, #1D1D1F); box-shadow: 0 12px 26px -8px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2);
+            transition: transform .18s;
         }
         .ln-ai-fab:hover { transform: translateY(-2px) scale(1.04); }
         .ln-ai-fab:active { transform: scale(.96); }
-        .ln-ai-fab svg { width: 22px; height: 22px; }
+        .ln-ai-fab svg { width: 20px; height: 20px; }
 
         .ln-ai-panel {
-            position: fixed; z-index: 89; right: 16px; bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
-            width: 380px; max-width: calc(100vw - 32px);
-            height: 540px; max-height: calc(100vh - 220px); display: none; flex-direction: column; overflow: hidden; border-radius: 24px;
-            background: rgba(255,255,255,.95); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px);
+            position: fixed; z-index: 89; right: 14px;
+            bottom: calc(var(--dock-h) + var(--dock-gap) + 70px + env(safe-area-inset-bottom, 0px));
+            width: 380px; max-width: calc(100vw - 28px); height: 540px; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px);
+            display: none; flex-direction: column; overflow: hidden; border-radius: 24px;
+            background: rgba(255,255,255,.94); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px);
             border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l);
         }
         .ln-ai-panel.open { display: flex; animation: ln-pop .24s ease; }
@@ -385,7 +437,7 @@
         .ln-ai-chips::-webkit-scrollbar { display: none; }
         .ln-ai-chips button { flex: none; padding: 6px 13px; border-radius: 999px; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--soft); background: rgba(0,0,0,.05); border: 0; cursor: pointer; transition: .15s; white-space: nowrap; }
         .ln-ai-chips button:hover { color: var(--ink); background: rgba(0,0,0,.1); }
-        .ln-ai-inputbar { display: flex; gap: 8px; padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hair); }
+        .ln-ai-inputbar { display: flex; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--hair); }
         .ln-ai-inputbar input { flex: 1; min-width: 0; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--hair); background: rgba(255,255,255,.85); font-family: inherit; font-size: 13.5px; outline: none; transition: .16s; }
         .ln-ai-inputbar input:focus { border-color: rgba(0,0,0,.4); box-shadow: 0 0 0 4px rgba(0,0,0,.06); background: #fff; }
         .ln-ai-send { width: 46px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer; color: #fff; background: #1D1D1F; transition: .15s; }
@@ -393,18 +445,19 @@
         .ln-ai-send:active { transform: scale(.96); }
         .ln-ai-send:disabled { opacity: .45; cursor: not-allowed; }
 
-        @media (min-width: 768px) {
-            .ln-ai-fab { right: 24px; bottom: 110px; }
-            .ln-ai-panel { right: 24px; bottom: 180px; }
+        @media (min-width: 640px) {
+            .ln-ai-fab { right: 24px; }
+            .ln-ai-panel { right: 24px; }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 639px) {
             .ln-input, .ln-textarea, .ln-select { font-size: 16px; }
             .ln-input-sm { font-size: 15px; }
             .ln-page-title { font-size: 23px; }
             .ln-form-card { padding: 18px; }
             .ln-ai-inputbar input { font-size: 16px; }
-            .ln-bar { height: 52px; padding-left: 14px; }
-            .ln-company { font-size: 11px; padding: 4px 10px; }
+            .ln-bar { padding-left: 14px; }
+            .ln-company { font-size: 11.5px; padding: 5px 10px; }
+            .ln-hlogout { display: none; }   /* logout ada di menu "Lainnya" */
         }
         @media (prefers-reduced-motion: reduce) {
             main, .ln-ai-panel, .ln-ai-msg { animation: none; }
@@ -419,12 +472,11 @@
 <header class="ln-header">
     <div class="ln-bar glass">
         <a href="{{ route('dashboard') }}" class="ln-brand" aria-label="LedgerNusa — ke Dashboard">
-            <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa" decoding="async">
+            <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa" height="26" decoding="async" fetchpriority="high">
         </a>
 
         <div class="ln-right">
             @if($activeCompany)
-                <!-- Bagian yang diubah ada di CSS class .ln-company -->
                 <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">{{ $activeCompany->name }}</a>
             @endif
             @if(auth()->user()->isSuperAdmin())
@@ -439,10 +491,10 @@
 </header>
 
 @if(session('trial_days') !== null && session('trial_days') <= 5)
-    <div class="ln-trial" style="text-align: center; margin-top: 10px;">
-        <div class="glass" style="display: inline-block; padding: 10px 20px; border-radius: 12px; font-size: 13px;">
+    <div class="ln-trial">
+        <div class="glass">
             <span>Trial Anda tersisa <strong>{{ session('trial_days') }} hari</strong>.</span>
-            <a href="{{ route('subscription.index') }}" style="font-weight: 600; text-decoration: underline; margin-left: 5px;">Perpanjang sekarang</a>
+            <a href="{{ route('subscription.index') }}">Perpanjang sekarang</a>
         </div>
     </div>
 @endif
@@ -465,44 +517,57 @@
     @yield('content')
 </main>
 
-{{-- NAVBAR BAWAH (7 Menu) --}}
-<nav class="ln-tabbar glass" aria-label="Menu utama">
+{{-- DOCK BAWAH --}}
+<nav class="ln-tabbar glass" id="lnDock" aria-label="Menu utama">
     @foreach($navMain as [$label, $route, $match, $icon])
         @php $on = $isOn($match); @endphp
-        <a href="{{ route($route) }}" class="ln-ti {{ $on ? 'active' : '' }}" @if($on) aria-current="page" @endif>
+        <a href="{{ route($route) }}" class="ln-ti {{ $on ? 'active' : '' }}" title="{{ $label }}" @if($on) aria-current="page" @endif>
             <svg viewBox="0 0 24 24" aria-hidden="true">{!! $icon !!}</svg>
-            {{ $label }}
+            <span class="lbl">{{ $label }}</span>
         </a>
     @endforeach
-    <button type="button" class="ln-ti js-more {{ $moreActiveMob ? 'active' : '' }}" aria-haspopup="dialog" aria-expanded="false" aria-controls="lnDdMenu">
+    <button type="button" class="ln-ti js-more {{ $moreActive ? 'active' : '' }}" title="Lainnya" aria-haspopup="dialog" aria-expanded="false" aria-controls="lnDdMenu">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/></svg>
-        Lainnya
+        <span class="lbl">Lainnya</span>
     </button>
 </nav>
 
 {{-- Menu "Lainnya" --}}
 <div class="ln-bd" id="lnDdBackdrop"></div>
-<div class="ln-sheet" id="lnDdMenu" role="dialog" aria-modal="true" aria-label="Menu lainnya" inert>
+<div class="ln-sheet" id="lnDdMenu" role="dialog" aria-modal="true" aria-labelledby="lnShTitle" tabindex="-1" inert>
     <div class="ln-grab" aria-hidden="true"></div>
 
-    <div class="ln-sg-wrap">
-        @foreach($lnMore as $group => $items)
-            @php $visible = collect($items)->filter(fn($i) => Route::has($i[1])); @endphp
-            @if($visible->isNotEmpty())
-                <section class="ln-sg">
-                    <p class="ln-sg-t">{{ $group }}</p>
-                    <ul>
-                        @foreach($visible as [$label, $route, $match])
-                            @php $on = $isOn($match); @endphp
-                            <li><a href="{{ route($route) }}" class="ln-sl {{ $on ? 'active' : '' }}" @if($on) aria-current="page" @endif>{{ $label }}</a></li>
-                        @endforeach
-                    </ul>
-                </section>
-            @endif
-        @endforeach
+    <div class="ln-sh-head">
+        <div class="ln-sh-title" id="lnShTitle">Menu</div>
+        <button type="button" class="ln-sh-close" id="lnShClose" aria-label="Tutup menu">×</button>
+    </div>
+
+    <div class="ln-sh-search">
+        <input type="search" id="lnMenuSearch" placeholder="Cari menu…" autocomplete="off" aria-label="Cari menu" aria-controls="lnMenuList">
+    </div>
+
+    <div class="ln-sh-scroll">
+        <div class="ln-sg-wrap" id="lnMenuList">
+            @foreach($lnMore as $group => $items)
+                @php $visible = collect($items)->filter(fn($i) => Route::has($i[1])); @endphp
+                @if($visible->isNotEmpty())
+                    <section class="ln-sg" data-group="{{ $group }}">
+                        <p class="ln-sg-t">{{ $group }}</p>
+                        <ul>
+                            @foreach($visible as [$label, $route, $match])
+                                @php $on = $isOn($match); @endphp
+                                <li><a href="{{ route($route) }}" class="ln-sl {{ $on ? 'active' : '' }}" @if($on) aria-current="page" @endif>{{ $label }}</a></li>
+                            @endforeach
+                        </ul>
+                    </section>
+                @endif
+            @endforeach
+        </div>
+        <p class="ln-sh-empty" id="lnMenuEmpty" role="status" hidden>Menu tidak ditemukan.</p>
     </div>
 
     <div class="ln-sheet-foot">
+        <span class="ln-av" aria-hidden="true">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
         <div class="who">
             <b>{{ auth()->user()->name }}</b>
             <span>{{ auth()->user()->email }}</span>
@@ -554,25 +619,62 @@
 (function () {
     const menu = document.getElementById('lnDdMenu');
     const bd = document.getElementById('lnDdBackdrop');
-    const btns = [...document.querySelectorAll('.js-more')];
+    const dock = document.getElementById('lnDock');
+    const btn = document.querySelector('.js-more');
+    const search = document.getElementById('lnMenuSearch');
+    const empty = document.getElementById('lnMenuEmpty');
+    const closeBtn = document.getElementById('lnShClose');
+    const groups = [...document.querySelectorAll('#lnMenuList .ln-sg')];
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    function filter() {
+        const q = search.value.trim().toLowerCase();
+        let total = 0;
+        groups.forEach(g => {
+            const inGroup = g.dataset.group.toLowerCase().includes(q);
+            let shown = 0;
+            g.querySelectorAll('li').forEach(li => {
+                const ok = !q || inGroup || li.textContent.toLowerCase().includes(q);
+                li.hidden = !ok;
+                if (ok) shown++;
+            });
+            g.hidden = shown === 0;
+            total += shown;
+        });
+        empty.hidden = total !== 0;
+    }
 
     function setOpen(open) {
         menu.classList.toggle('open', open);
         bd.classList.toggle('open', open);
-        if (open) menu.removeAttribute('inert'); else menu.setAttribute('inert', '');
-        btns.forEach(b => { b.classList.toggle('open', open); b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+        dock.classList.toggle('more-open', open);
+        btn.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         document.documentElement.classList.toggle('ln-lock', open);
+        if (open) {
+            menu.removeAttribute('inert');
+            // desktop: langsung bisa mengetik; mobile: jangan memunculkan keyboard
+            setTimeout(() => (finePointer ? search : menu).focus({ preventScroll: true }), 60);
+        } else {
+            menu.setAttribute('inert', '');
+            search.value = '';
+            filter();
+        }
     }
 
     window.lnToggleMore = function () { setOpen(!menu.classList.contains('open')); };
-    btns.forEach(b => b.addEventListener('click', window.lnToggleMore));
+    btn.addEventListener('click', window.lnToggleMore);
     bd.addEventListener('click', () => setOpen(false));
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && menu.classList.contains('open')) {
-            setOpen(false);
-            const b = btns.find(x => x.offsetParent !== null);
-            if (b) b.focus();
+    closeBtn.addEventListener('click', () => { setOpen(false); btn.focus(); });
+    search.addEventListener('input', filter);
+    search.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const first = menu.querySelector('.ln-sg:not([hidden]) li:not([hidden]) a');
+            if (first) { e.preventDefault(); first.click(); }
         }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && menu.classList.contains('open')) { setOpen(false); btn.focus(); }
     });
 })();
 

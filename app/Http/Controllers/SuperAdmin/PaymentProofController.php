@@ -13,10 +13,13 @@ class PaymentProofController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->input('status', 'pending');
+        // PERBAIKAN: Ubah default dari 'pending' menjadi 'all'
+        $status = $request->input('status', 'all');
 
         $query = PaymentProof::with(['company', 'plan', 'user'])->latest();
 
+        // Jika statusnya adalah pending/approved/rejected, lakukan filter.
+        // Jika statusnya 'all', blok ini dilewati sehingga semua data ditarik.
         if (in_array($status, ['pending', 'approved', 'rejected'])) {
             $query->where('status', $status);
         }

@@ -2,6 +2,26 @@
 @section('title', 'Kas & Bank')
 @section('content')
 
+<style>
+/* ===== Hanya tombol: gelap → biru (2-tone: #2563EB, #1E3A8A) ===== */
+.ln-btn-primary{
+    background:linear-gradient(180deg,#2563EB,#1E3A8A) !important;
+    border-color:transparent !important;
+    color:#fff !important;
+}
+.ln-btn-primary:hover{
+    background:linear-gradient(180deg,#1E3A8A,#1E3A8A) !important;
+}
+.ln-btn-outline{
+    color:#1E3A8A !important;
+    border-color:rgba(37,99,235,.35) !important;
+}
+.ln-btn-outline:hover{
+    background:rgba(37,99,235,.08) !important;
+    border-color:rgba(37,99,235,.55) !important;
+}
+</style>
+
 <div class="ln-page-head">
     <div>
         <h1 class="ln-page-title">Kas & Bank</h1>
@@ -19,7 +39,7 @@
         <div class="top">
             <span class="lbl">Total Kas Masuk</span>
             <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>
             </span>
         </div>
         <div class="val">Rp {{ number_format($totalIn, 0, ',', '.') }}</div>
@@ -28,7 +48,6 @@
         <div class="top">
             <span class="lbl">Total Kas Keluar</span>
             <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
             </span>
         </div>
         <div class="val">Rp {{ number_format($totalOut, 0, ',', '.') }}</div>

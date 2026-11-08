@@ -12,7 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+       $schedule->command('exchange-rates:sync --from=USD --to=IDR')->dailyAt('17:00');
+    $schedule->command('exchange-rates:sync --from=SGD --to=IDR')->dailyAt('17:00');
+    $schedule->command('exchange-rates:sync --from=EUR --to=IDR')->dailyAt('17:00');
+    $schedule->command('exchange-rates:sync --from=JPY --to=IDR')->dailyAt('17:00');
+    $schedule->command('exchange-rates:sync --from=GBP --to=IDR')->dailyAt('17:00');
     }
 
     /**

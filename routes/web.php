@@ -13,7 +13,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboard;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenant;
 use App\Http\Controllers\SuperAdmin\PaymentProofController;
 use App\Http\Controllers\Setting\CurrencyController;
-use App\Http\Controllers\Setting\ExchangeRateController;
+use App\Http\Controllers\ExchangeRateController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================
@@ -31,7 +31,6 @@ Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::
 
 // =========================================================
 // GRUP 1: Auth + Active Company (TANPA cek subscription)
-// Bisa diakses walau langganan expired
 // =========================================================
 Route::middleware(['auth', 'active.company'])->group(function () {
 
@@ -47,7 +46,7 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
     Route::get('/companies/switch/{id}', [CompanyController::class, 'switch'])->name('companies.switch');
 
-    // ============ Profile (Breeze) ============
+    // ============ Profile ============
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -63,8 +62,7 @@ Route::middleware(['auth', 'active.company'])->group(function () {
 });
 
 // =========================================================
-// GRUP 2: Auth + Active Company + Subscription check
-// Fitur utama aplikasi
+// GRUP 2: Auth + Active Company + Subscription
 // =========================================================
 Route::middleware(['auth', 'active.company', 'subscription'])->group(function () {
 
@@ -113,10 +111,16 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
     // ============ Multi-Currency Settings ============
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::resource('currencies', CurrencyController::class);
-        Route::resource('exchange-rates', ExchangeRateController::class)
-            ->only(['index', 'store', 'destroy']);
-        Route::get('exchange-rates/fetch', [ExchangeRateController::class, 'fetchRate'])
-            ->name('exchange-rates.fetch');
+
+        // Exchange rates — explicit routes, hindari konflik & binding mismatch
+        Route::get('exchange-rates', [ExchangeRateController::class, 'index'])
+            ->name('exchange-rates.index');
+        Route::post('exchange-rates', [ExchangeRateController::class, 'store'])
+            ->name('exchange-rates.store');
+        Route::post('exchange-rates/sync', [ExchangeRateController::class, 'sync'])
+            ->name('exchange-rates.sync');
+        Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])
+            ->name('exchange-rates.destroy');
     });
 
     // ============ Customer ============
@@ -206,7 +210,6 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
     Route::resource('fixed-assets', \App\Http\Controllers\FixedAssetController::class);
     Route::post('/fixed-assets/{fixedAsset}/dispose', [\App\Http\Controllers\FixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
 
-    // Depresiasi (nama prefix fixed-assets.*)
     Route::prefix('depreciations')->name('fixed-assets.')->group(function () {
         Route::get('/', [\App\Http\Controllers\AssetDepreciationController::class, 'index'])->name('depreciations');
         Route::get('/run', [\App\Http\Controllers\AssetDepreciationController::class, 'form'])->name('depreciation-run');
@@ -242,7 +245,7 @@ Route::middleware(['auth', 'super.admin'])
         Route::post('/tenants/{tenant}/suspend', [SuperAdminTenant::class, 'suspend'])->name('tenants.suspend');
         Route::post('/tenants/{tenant}/reactivate', [SuperAdminTenant::class, 'reactivate'])->name('tenants.reactivate');
 
-        // ============ Payment Proofs (Verifikasi Pembayaran Manual) ============
+        // ============ Payment Proofs ============
         Route::prefix('payment-proofs')->name('payment-proofs.')->group(function () {
             Route::get('/', [PaymentProofController::class, 'index'])->name('index');
             Route::get('/{proof}', [PaymentProofController::class, 'show'])->name('show');

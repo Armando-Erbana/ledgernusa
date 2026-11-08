@@ -240,7 +240,6 @@
 
         <div class="sa-side-foot">
             @if(Route::has('dashboard'))
-                <a href="{{ route('dashboard') }}" class="sa-app-link">Buka Aplikasi <span>→</span></a>
             @endif
             <div class="sa-me">
                 <span class="sa-me-av">{{ $saInitial }}</span>
