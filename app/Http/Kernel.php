@@ -65,10 +65,14 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'super.admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+        'plan' => \App\Http\Middleware\CheckPlanFeature::class,
 
         // Custom
         'active.company' => \App\Http\Middleware\SetActiveCompany::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'subscription' => \App\Http\Middleware\CheckSubscription::class,
+        
+        // TAMBAHKAN BARIS INI UNTUK FASE 3
+        'branch.access' => \App\Http\Middleware\BranchAccess::class,
     ];
 }

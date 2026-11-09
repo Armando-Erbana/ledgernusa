@@ -12,7 +12,7 @@ class Employee extends Model
     use HasFactory, BelongsToCompany, Auditable;
 
     protected $fillable = [
-        'company_id', 'employee_number', 'name', 'npwp', 'ktp', 'position', 'department',
+        'company_id', 'branch_id', 'employee_number', 'name', 'npwp', 'ktp', 'position', 'department',
         'join_date', 'resign_date', 'employment_type', 'ptkp_status',
         'basic_salary', 'fixed_allowance', 'bank_name', 'bank_account_number', 'is_active',
     ];

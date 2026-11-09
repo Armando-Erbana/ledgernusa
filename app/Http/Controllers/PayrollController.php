@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\Employee;
 use App\Models\PayrollItem;
-use App\Services\PayrollService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,117 +12,188 @@ class PayrollController extends Controller
 {
     public function index()
     {
-        $payrolls = Payroll::latest('period_year')->latest('period_month')->paginate(20);
+        $isOwner = auth()->user()->roleInActiveCompany() !== 'staff';
+        $branchId = session('branch_id');
+
+        $query = Payroll::where('company_id', session('company_id'));
+
+        if (!$isOwner) {
+            $query->where('branch_id', $branchId);
+        } elseif ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $payrolls = $query->latest('id')->paginate(20);
         return view('payrolls.index', compact('payrolls'));
     }
 
     public function create()
     {
-        $employees = Employee::where('is_active', true)->orderBy('name')->get();
+        $isOwner = auth()->user()->roleInActiveCompany() !== 'staff';
+        $branchId = session('branch_id');
+
+        $query = Employee::where('company_id', session('company_id'))->where('is_active', true);
+
+        if (!$isOwner) {
+            $query->where('branch_id', $branchId);
+        } elseif ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $employees = $query->orderBy('name')->get();
+            
         $nextNumber = 'PAY-' . date('Ym') . '-' . str_pad(Payroll::where('company_id', session('company_id'))->count() + 1, 4, '0', STR_PAD_LEFT);
+        
         return view('payrolls.create', compact('employees', 'nextNumber'));
     }
 
-    public function store(Request $request, PayrollService $service)
+    public function store(Request $request)
     {
         $data = $request->validate([
-            'payroll_number' => 'required|string|max:50|unique:payrolls,payroll_number',
-            'period_month' => 'required|integer|between:1,12',
-            'period_year' => 'required|integer|min:2020',
+            'payroll_number' => 'required|string|max:50',
+            'period_month' => 'required|numeric',
+            'period_year' => 'required|numeric',
             'payment_date' => 'required|date',
-            'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.employee_id' => 'required|exists:employees,id',
-            'items.*.basic_salary' => 'required|numeric|min:0',
-            'items.*.allowance' => 'nullable|numeric|min:0',
-            'items.*.other_income' => 'nullable|numeric|min:0',
-            'items.*.other_deduction' => 'nullable|numeric|min:0',
+            'items.*.basic_salary' => 'required|numeric',
+            'items.*.allowance' => 'nullable|numeric',
+            'items.*.other_income' => 'nullable|numeric',
+            'items.*.other_deduction' => 'nullable|numeric',
         ]);
 
-        DB::transaction(function () use ($data, $service) {
-            $payroll = Payroll::create([
-                'company_id' => session('company_id'),
-                'payroll_number' => $data['payroll_number'],
-                'period_month' => $data['period_month'],
-                'period_year' => $data['period_year'],
-                'payment_date' => $data['payment_date'],
-                'status' => 'draft',
-                'notes' => $data['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
+        try {
+            DB::transaction(function () use ($data, $request) {
+                $totalGross = 0; $totalPph21 = 0; $totalBpjs = 0; $totalNet = 0;
+                $payrollItems = [];
 
-            $totalGross = 0; $totalPph = 0; $totalBpjs = 0; $totalDed = 0; $totalNet = 0;
+                foreach ($data['items'] as $item) {
+                    $gross = $item['basic_salary'] + ($item['allowance'] ?? 0) + ($item['other_income'] ?? 0);
+                    $pph21 = 0; $bpjs = 0; 
+                    $net = $gross - $pph21 - $bpjs - ($item['other_deduction'] ?? 0);
 
-            foreach ($data['items'] as $item) {
-                $employee = Employee::find($item['employee_id']);
-                $calc = $service->calculateItem($employee, [
-                    'basic_salary' => $item['basic_salary'],
-                    'allowance' => $item['allowance'] ?? 0,
-                    'other_income' => $item['other_income'] ?? 0,
-                    'other_deduction' => $item['other_deduction'] ?? 0,
+                    $totalGross += $gross;
+                    $totalPph21 += $pph21;
+                    $totalBpjs += $bpjs;
+                    $totalNet += $net;
+
+                    $payrollItems[] = [
+                        'employee_id' => $item['employee_id'],
+                        'basic_salary' => $item['basic_salary'],
+                        'allowance' => $item['allowance'] ?? 0,
+                        'other_income' => $item['other_income'] ?? 0,
+                        'other_deduction' => $item['other_deduction'] ?? 0,
+                        'gross_salary' => $gross,
+                        'pph21' => $pph21,
+                        'bpjs_kesehatan' => $bpjs / 2,
+                        'bpjs_ketenagakerjaan' => $bpjs / 2,
+                        'total_deduction' => $pph21 + $bpjs + ($item['other_deduction'] ?? 0),
+                        'net_salary' => $net,
+                    ];
+                }
+
+                // Handle branch_id untuk Konsolidasi
+                $branchId = session('branch_id');
+                if (!$branchId) {
+                    $mainBranch = \App\Models\Branch::where('company_id', session('company_id'))->where('is_main', true)->first();
+                    $branchId = $mainBranch ? $mainBranch->id : null;
+                }
+
+                $payroll = Payroll::create([
+                    'company_id' => session('company_id'),
+                    'branch_id' => $branchId,
+                    'payroll_number' => $data['payroll_number'],
+                    'period_month' => $data['period_month'],
+                    'period_year' => $data['period_year'],
+                    'payment_date' => $data['payment_date'],
+                    'total_gross' => $totalGross,
+                    'total_pph21' => $totalPph21,
+                    'total_bpjs' => $totalBpjs,
+                    'total_net' => $totalNet,
+                    'status' => 'draft',
+                    'notes' => $request->notes,
                 ]);
 
-                $calc['payroll_id'] = $payroll->id;
-                PayrollItem::create($calc);
+                foreach ($payrollItems as $pi) {
+                    $payroll->items()->create($pi);
+                }
+            });
 
-                $totalGross += $calc['gross_salary'];
-                $totalPph += $calc['pph21'];
-                $totalBpjs += $calc['bpjs_kesehatan'] + $calc['bpjs_ketenagakerjaan'];
-                $totalDed += $calc['total_deduction'];
-                $totalNet += $calc['net_salary'];
-            }
-
-            $payroll->update([
-                'total_gross' => $totalGross,
-                'total_pph21' => $totalPph,
-                'total_bpjs' => $totalBpjs,
-                'total_deduction' => $totalDed,
-                'total_net' => $totalNet,
-            ]);
-        });
-
-        return redirect()->route('payrolls.index')->with('success', 'Payroll berhasil dibuat.');
+            return redirect()->route('payrolls.index')->with('success', 'Payroll berhasil dibuat sebagai Draft.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan Payroll: ' . $e->getMessage());
+        }
     }
 
     public function show(Payroll $payroll)
     {
-        $payroll->load('items.employee', 'journal.entries.account');
+        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
+        $payroll->load('items.employee', 'journal');
         return view('payrolls.show', compact('payroll'));
-    }
-
-    public function destroy(Payroll $payroll)
-    {
-        if ($payroll->status !== 'draft') return back()->with('error', 'Hanya payroll draft yang bisa dihapus.');
-        $payroll->items()->delete();
-        $payroll->delete();
-        return redirect()->route('payrolls.index')->with('success', 'Payroll dihapus.');
     }
 
     public function post(Payroll $payroll)
     {
-        if ($payroll->status !== 'draft') return back()->with('error', 'Payroll sudah diposting.');
+        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
 
-        DB::transaction(function () use ($payroll) {
-            $journal = $payroll->generateJournal();
-            $payroll->update([
-                'journal_id' => $journal->id,
-                'status' => 'posted',
-            ]);
-        });
+        if ($payroll->status === 'posted') {
+            return back()->with('error', 'Payroll sudah di-posting.');
+        }
 
-        return back()->with('success', 'Payroll diposting, jurnal otomatis dibuat.');
+        try {
+            DB::transaction(function () use ($payroll) {
+                $payroll->update(['status' => 'posted']);
+                $journal = $payroll->generateJournal();
+                
+                if ($journal) {
+                    $payroll->update(['journal_id' => $journal->id]);
+                }
+            });
+
+            return back()->with('success', 'Payroll berhasil diposting & Jurnal telah dibuat.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function markPaid(Payroll $payroll)
     {
-        if ($payroll->status !== 'posted') return back()->with('error', 'Payroll harus diposting dulu.');
+        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
+
+        if ($payroll->status !== 'posted') {
+            return back()->with('error', 'Hanya payroll berstatus posted yang bisa dibayar.');
+        }
         $payroll->update(['status' => 'paid']);
-        return back()->with('success', 'Payroll ditandai sudah dibayar.');
+        return back()->with('success', 'Payroll berhasil ditandai sudah dibayar.');
+    }
+
+    public function destroy(Payroll $payroll)
+    {
+        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
+
+        if ($payroll->status === 'paid') {
+            return back()->with('error', 'Payroll yang sudah dibayar tidak dapat dihapus.');
+        }
+
+        try {
+            DB::transaction(function () use ($payroll) {
+                if ($payroll->journal) {
+                    $payroll->journal->entries()->delete();
+                    $payroll->journal->delete();
+                }
+                $payroll->items()->delete();
+                $payroll->delete();
+            });
+            return redirect()->route('payrolls.index')->with('success', 'Data Payroll berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghapus Payroll: ' . $e->getMessage());
+        }
     }
 
     public function slipGaji(Payroll $payroll, PayrollItem $item)
     {
-        $item->load('employee');
+        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
         return view('payrolls.slip', compact('payroll', 'item'));
     }
 }

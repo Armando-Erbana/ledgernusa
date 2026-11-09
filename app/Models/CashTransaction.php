@@ -13,6 +13,7 @@ class CashTransaction extends Model
 
     protected $fillable = [
         'company_id',
+        'branch_id',
         'journal_id',
         'type',
         'date',

@@ -2,26 +2,6 @@
 @section('title', 'Payroll')
 @section('content')
 
-<style>
-/* ===== Hanya tombol: gelap → biru (2-tone: #2563EB, #1E3A8A) ===== */
-.ln-btn-primary{
-    background:linear-gradient(180deg,#2563EB,#1E3A8A) !important;
-    border-color:transparent !important;
-    color:#fff !important;
-}
-.ln-btn-primary:hover{
-    background:linear-gradient(180deg,#1E3A8A,#1E3A8A) !important;
-}
-.ln-btn-outline{
-    color:#1E3A8A !important;
-    border-color:rgba(37,99,235,.35) !important;
-}
-.ln-btn-outline:hover{
-    background:rgba(37,99,235,.08) !important;
-    border-color:rgba(37,99,235,.55) !important;
-}
-</style>
-
 <div class="ln-page-head">
     <div>
         <h1 class="ln-page-title">Payroll</h1>
@@ -45,7 +25,19 @@
                 <td class="num">Rp {{ number_format($p->total_pph21, 0, ',', '.') }}</td>
                 <td class="num">Rp {{ number_format($p->total_net, 0, ',', '.') }}</td>
                 <td class="center"><span class="ln-badge {{ $p->status === 'draft' ? 'draft' : 'posted' }}">{{ $p->status }}</span></td>
-                <td class="center"><a href="{{ route('payrolls.show', $p) }}" class="ln-action">Lihat</a></td>
+                <td class="center whitespace-nowrap">
+                    <a href="{{ route('payrolls.show', $p) }}" class="ln-action">Lihat</a>
+                    
+                    {{-- TOMBOL HAPUS --}}
+                    @if($p->status !== 'paid')
+                        <span class="ln-action-sep">|</span>
+                        <form action="{{ route('payrolls.destroy', $p) }}" method="POST" class="inline" onsubmit="return confirm('Hapus payroll ini beserta jurnalnya?')">
+                            @csrf 
+                            @method('DELETE')
+                            <button type="submit" class="ln-action red">Hapus</button>
+                        </form>
+                    @endif
+                </td>
             </tr>
         @empty
             <tr><td colspan="8" class="empty">Belum ada payroll</td></tr>

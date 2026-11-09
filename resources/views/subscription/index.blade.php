@@ -54,16 +54,52 @@
 .dz-copy:hover{background:rgba(29,78,216,.16)}
 .dz-pay .foot{margin:16px 0 0;font-size:12.5px;color:var(--mute)}
 
-/* plans */
-.dz-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px}
-.dz-plan{padding:24px;display:flex;flex-direction:column;transition:.2s}
-.dz-plan:hover{transform:translateY(-2px)}
-.dz-plan.on{border-color:transparent;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 18px 38px -14px rgba(29,78,216,.32),0 0 0 2px var(--b1)}
-.dz-pn{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--b1)}
-.dz-pd{margin:6px 0 0;font-size:12.5px;color:var(--mute);line-height:1.5}
-.dz-price{margin:12px 0 20px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+/* ====== PILIH PAKET (Animasi Hover Diperbarui) ====== */
+.dz-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;align-items:stretch}
+.dz-plan{
+    padding:24px;display:flex;flex-direction:column;position:relative;
+    border:2px solid transparent; /* Border transparan agar tidak ada pergeseran layout */
+    transition:all .3s cubic-bezier(.25,.8,.25,1);
+    background:rgba(255,255,255,.62);
+}
+/* Efek Hover: Stroke Biru & Naik Sedikit */
+.dz-plan:hover{
+    transform:translateY(-4px);
+    border-color:var(--b1);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 18px 38px -14px rgba(29,78,216,.25), 0 0 0 1px var(--b1);
+}
+/* Kartu Professional (Populer) Statis Biru */
+.dz-plan.popular{
+    border-color:var(--b1);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 12px 32px -14px rgba(29,78,216,.2);
+}
+.dz-plan.popular:hover{
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 18px 38px -14px rgba(29,78,216,.4), 0 0 0 1px var(--b1);
+}
+/* Kartu yang Sedang Dipilih */
+.dz-plan.on{
+    border-color:var(--b1);
+    background:rgba(29,78,216,.03);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 18px 38px -14px rgba(29,78,216,.32), 0 0 0 2px var(--b1);
+}
+.dz-plan.on:hover{ transform:translateY(-2px); }
+
+/* Label Paling Populer */
+.dz-badge-pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--b1);color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 12px;border-radius:999px;white-space:nowrap;box-shadow:0 4px 10px -2px rgba(29,78,216,.4);}
+
+.dz-pn{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--b1)}
+.dz-pd{margin:6px 0 0;font-size:12.5px;color:var(--mute);line-height:1.5;min-height:36px}
+.dz-price{margin:12px 0 20px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:20px}
 .dz-price small{font-size:13px;font-weight:500;color:var(--mute)}
-.dz-plan .spacer{flex:1}
+
+/* Fitur List */
+.dz-features{list-style:none;padding:0;margin:0 0 24px 0;flex:1}
+.dz-features li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink);margin-bottom:12px;line-height:1.4}
+.dz-features li:last-child{margin-bottom:0}
+.dz-features li svg{flex:none;width:16px;height:16px;color:var(--b1);margin-top:1px}
+.dz-features li.muted{color:var(--mute);opacity:.6}
+.dz-features li.muted svg{color:var(--mute)}
+.dz-features strong{font-weight:700}
 
 .dz-btn{height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 22px;border-radius:12px;
     font-size:13px;font-weight:600;text-decoration:none;border:0;cursor:pointer;transition:.18s}
@@ -72,7 +108,7 @@
 .dz-btn.pri:hover{transform:translateY(-1px);filter:brightness(1.05)}
 .dz-btn.ghost{color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--line)}
 .dz-btn.ghost:hover{background:#fff;border-color:rgba(29,78,216,.35);color:var(--b1)}
-.dz-btn.chosen{color:var(--b1);background:rgba(29,78,216,.08);cursor:default}
+.dz-btn.chosen{color:var(--b1);background:rgba(29,78,216,.08);cursor:default;border:1px solid transparent}
 
 .dz-empty{padding:40px 20px;text-align:center;color:var(--mute);margin-bottom:30px}
 
@@ -181,18 +217,52 @@
     @else
         <div class="dz-plans">
             @foreach($plans as $plan)
-                @php $isSelected = $selectedPlanId == $plan->id; @endphp
-                <div class="dz-glass dz-plan {{ $isSelected ? 'on' : '' }}">
+                @php 
+                    $isSelected = $selectedPlanId == $plan->id; 
+                    $planCode = strtolower($plan->code ?? $plan->name); // Deteksi paket
+                    $isPro = str_contains($planCode, 'pro');
+                @endphp
+                
+                <div class="dz-plan {{ $isSelected ? 'on' : '' }} {{ $isPro ? 'popular' : '' }}">
+                    @if($isPro)
+                        <div class="dz-badge-pop">Paling Populer</div>
+                    @endif
+
                     <div class="dz-pn">{{ $plan->name }}</div>
                     @if($plan->description ?? null)
                         <p class="dz-pd">{{ $plan->description }}</p>
                     @endif
-                    <div class="dz-price">Rp {{ number_format($plan->price, 0, ',', '.') }}<small> / {{ $plan->duration_days ?? 30 }} hari</small></div>
-                    <div class="spacer"></div>
+                    <div class="dz-price">
+                        Rp {{ number_format($plan->price, 0, ',', '.') }}
+                        <small> / {{ $plan->duration_days ?? 30 }} hari</small>
+                    </div>
+
+                    {{-- Daftar Fitur Dinamis --}}
+                    <ul class="dz-features">
+                        @if(str_contains($planCode, 'starter'))
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Pengguna (Owner)</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Jurnal & Buku Besar</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Kas & Bank, Penjualan, Pembelian</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Laporan Keuangan Dasar</li>
+                            <li class="muted"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Multi-Cabang</li>
+                        @elseif($isPro)
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Semua fitur Starter</strong></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Hingga 5 Pengguna</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Multi-Cabang</strong> & Rekonsiliasi</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Sales Order, PO, Penerimaan</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Payroll, Aset Tetap, Pajak</li>
+                        @else
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Semua fitur Professional</strong></li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Unlimited</strong> Pengguna & Cabang</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Masa aktif hingga 60 hari</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Prioritas Dukungan (Support)</li>
+                        @endif
+                    </ul>
+
                     @if($isSelected)
                         <span class="dz-btn block chosen">Paket Dipilih</span>
                     @else
-                        <a href="{{ route('subscription.index', ['plan' => $plan->id]) }}" class="dz-btn block ghost">Pilih Paket</a>
+                        <a href="{{ route('subscription.index', ['plan' => $plan->id]) }}" class="dz-btn block {{ $isPro ? 'pri' : 'ghost' }}">Pilih Paket</a>
                     @endif
                 </div>
             @endforeach

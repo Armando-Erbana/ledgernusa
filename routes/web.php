@@ -14,13 +14,19 @@ use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenant;
 use App\Http\Controllers\SuperAdmin\PaymentProofController;
 use App\Http\Controllers\Setting\CurrencyController;
 use App\Http\Controllers\ExchangeRateController;
+use App\Http\Controllers\BranchController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================
 // ROOT
 // =========================================================
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    // Jika sudah login, langsung ke dashboard
+    if (auth()->check()) {
+        return redirect('/dashboard');
+    }
+    // Jika belum login, tampilkan landing page
+    return view('landing');
 });
 
 // =========================================================
@@ -62,9 +68,10 @@ Route::middleware(['auth', 'active.company'])->group(function () {
 });
 
 // =========================================================
-// GRUP 2: Auth + Active Company + Subscription
+// GRUP 2: Auth + Active Company + Subscription + Branch Access
 // =========================================================
-Route::middleware(['auth', 'active.company', 'subscription'])->group(function () {
+// PERHATIKAN: Middleware 'branch.access' ditambahkan di sini
+Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->group(function () {
 
     // ============ Dashboard ============
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -112,15 +119,10 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::resource('currencies', CurrencyController::class);
 
-        // Exchange rates — explicit routes, hindari konflik & binding mismatch
-        Route::get('exchange-rates', [ExchangeRateController::class, 'index'])
-            ->name('exchange-rates.index');
-        Route::post('exchange-rates', [ExchangeRateController::class, 'store'])
-            ->name('exchange-rates.store');
-        Route::post('exchange-rates/sync', [ExchangeRateController::class, 'sync'])
-            ->name('exchange-rates.sync');
-        Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])
-            ->name('exchange-rates.destroy');
+        Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+        Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');
+        Route::post('exchange-rates/sync', [ExchangeRateController::class, 'sync'])->name('exchange-rates.sync');
+        Route::delete('exchange-rates/{exchangeRate}', [ExchangeRateController::class, 'destroy'])->name('exchange-rates.destroy');
     });
 
     // ============ Customer ============
@@ -222,6 +224,20 @@ Route::middleware(['auth', 'active.company', 'subscription'])->group(function ()
         Route::get('/ppn', [\App\Http\Controllers\TaxReportController::class, 'ppn'])->name('ppn');
         Route::get('/pph23', [\App\Http\Controllers\TaxReportController::class, 'pph23'])->name('pph23');
         Route::get('/summary', [\App\Http\Controllers\TaxReportController::class, 'summary'])->name('summary');
+    });
+
+    // =========================================================
+    // GRUP 3: FITUR PREMIUM (Hanya Professional & Enterprise)
+    // =========================================================
+    Route::middleware(['plan:pro,enterprise'])->group(function () {
+        
+        // Fitur Multi-Cabang (Branches)
+        Route::resource('branches', BranchController::class)->except(['create', 'show', 'edit', 'update']);
+        // Ubah {branch} menjadi {id} agar bisa menerima ID 0 (Konsolidasi)
+        Route::get('/branches/switch/{id}', [BranchController::class, 'switchBranch'])->name('branches.switch');
+        
+        // Nanti fitur Budgeting, e-Faktur, dll bisa ditaruh di sini
+        
     });
 });
 

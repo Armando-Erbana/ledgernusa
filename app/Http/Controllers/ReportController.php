@@ -10,6 +10,29 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    /**
+     * Helper untuk mendapatkan ID Cabang yang difilter
+     */
+    private function getBranchId(Request $request)
+    {
+        $planCode = strtolower(auth()->user()->activeCompany()->subscription?->plan?->code ?? 'starter');
+        $isPro = in_array($planCode, ['pro', 'enterprise']);
+        
+        // Jika bukan paket Pro, jangan terapkan filter cabang (tampilkan semua data miliknya)
+        if (!$isPro) {
+            return null; 
+        }
+
+        $branchId = $request->input('branch_id', session('branch_id'));
+        
+        // Jika memilih 'all' (Konsolidasi), kembalikan null
+        if ($branchId === 'all') {
+            return null;
+        }
+        
+        return $branchId ? (int)$branchId : null;
+    }
+
     public function index()
     {
         return view('reports.index');
@@ -18,6 +41,8 @@ class ReportController extends Controller
     // Buku Besar per Akun
     public function ledger(Request $request)
     {
+        $branchId = $this->getBranchId($request);
+        
         $accounts = Account::orderBy('code')->get();
         $accountId = $request->get('account_id');
         $from = $request->get('from', now()->startOfMonth()->format('Y-m-d'));
@@ -33,12 +58,15 @@ class ReportController extends Controller
 
             // Saldo awal (sebelum $from)
             $openingDebit = JournalEntry::where('account_id', $accountId)
-                ->whereHas('journal', function ($q) use ($from) {
+                ->whereHas('journal', function ($q) use ($from, $branchId) {
                     $q->where('status', 'posted')->where('date', '<', $from);
+                    if ($branchId) $q->where('branch_id', $branchId);
                 })->sum('debit');
+                
             $openingCredit = JournalEntry::where('account_id', $accountId)
-                ->whereHas('journal', function ($q) use ($from) {
+                ->whereHas('journal', function ($q) use ($from, $branchId) {
                     $q->where('status', 'posted')->where('date', '<', $from);
+                    if ($branchId) $q->where('branch_id', $branchId);
                 })->sum('credit');
 
             $openingBalance = $account->normal_balance === 'debit'
@@ -48,9 +76,9 @@ class ReportController extends Controller
             // Mutasi periode
             $entries = JournalEntry::with(['journal', 'account'])
                 ->where('account_id', $accountId)
-                ->whereHas('journal', function ($q) use ($from, $to) {
-                    $q->where('status', 'posted')
-                      ->whereBetween('date', [$from, $to]);
+                ->whereHas('journal', function ($q) use ($from, $to, $branchId) {
+                    $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
                 })
                 ->join('journals', 'journal_entries.journal_id', '=', 'journals.id')
                 ->orderBy('journals.date')
@@ -66,12 +94,13 @@ class ReportController extends Controller
                 : ($openingBalance + $totalCredit - $totalDebit);
         }
 
-        return view('reports.ledger', compact('accounts', 'account', 'entries', 'from', 'to', 'openingBalance', 'closingBalance'));
+        return view('reports.ledger', compact('accounts', 'account', 'entries', 'from', 'to', 'openingBalance', 'closingBalance', 'branchId'));
     }
 
     // Neraca Saldo (Trial Balance)
     public function trialBalance(Request $request)
     {
+        $branchId = $this->getBranchId($request);
         $from = $request->get('from', now()->startOfYear()->format('Y-m-d'));
         $to = $request->get('to', now()->format('Y-m-d'));
 
@@ -82,13 +111,15 @@ class ReportController extends Controller
 
         foreach ($accounts as $acc) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', function ($q) use ($from, $to) {
+                ->whereHas('journal', function ($q) use ($from, $to, $branchId) {
                     $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
                 })->sum('debit');
 
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', function ($q) use ($from, $to) {
+                ->whereHas('journal', function ($q) use ($from, $to, $branchId) {
                     $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
                 })->sum('credit');
 
             $balance = $acc->normal_balance === 'debit' ? ($debit - $credit) : ($credit - $debit);
@@ -105,29 +136,42 @@ class ReportController extends Controller
             }
         }
 
-        return view('reports.trial-balance', compact('rows', 'from', 'to', 'totalDebit', 'totalCredit'));
+        return view('reports.trial-balance', compact('rows', 'from', 'to', 'totalDebit', 'totalCredit', 'branchId'));
     }
 
     // Laba Rugi
     public function incomeStatement(Request $request)
     {
+        $branchId = $this->getBranchId($request);
         $from = $request->get('from', now()->startOfMonth()->format('Y-m-d'));
         $to = $request->get('to', now()->format('Y-m-d'));
 
-        $revenues = Account::where('type', 'revenue')->orderBy('code')->get()->map(function ($acc) use ($from, $to) {
+        $revenues = Account::where('type', 'revenue')->orderBy('code')->get()->map(function ($acc) use ($from, $to, $branchId) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->whereBetween('date', [$from, $to]))->sum('debit');
+                ->whereHas('journal', function($q) use ($from, $to, $branchId) {
+                    $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('debit');
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->whereBetween('date', [$from, $to]))->sum('credit');
+                ->whereHas('journal', function($q) use ($from, $to, $branchId) {
+                    $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('credit');
             $acc->period_balance = $credit - $debit;
             return $acc;
         });
 
-        $expenses = Account::where('type', 'expense')->orderBy('code')->get()->map(function ($acc) use ($from, $to) {
+        $expenses = Account::where('type', 'expense')->orderBy('code')->get()->map(function ($acc) use ($from, $to, $branchId) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->whereBetween('date', [$from, $to]))->sum('debit');
+                ->whereHas('journal', function($q) use ($from, $to, $branchId) {
+                    $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('debit');
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->whereBetween('date', [$from, $to]))->sum('credit');
+                ->whereHas('journal', function($q) use ($from, $to, $branchId) {
+                    $q->where('status', 'posted')->whereBetween('date', [$from, $to]);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('credit');
             $acc->period_balance = $debit - $credit;
             return $acc;
         });
@@ -136,37 +180,56 @@ class ReportController extends Controller
         $totalExpense = $expenses->sum('period_balance');
         $netIncome = $totalRevenue - $totalExpense;
 
-        return view('reports.income-statement', compact('revenues', 'expenses', 'totalRevenue', 'totalExpense', 'netIncome', 'from', 'to'));
+        return view('reports.income-statement', compact('revenues', 'expenses', 'totalRevenue', 'totalExpense', 'netIncome', 'from', 'to', 'branchId'));
     }
 
     // Neraca
     public function balanceSheet(Request $request)
     {
+        $branchId = $this->getBranchId($request);
         $asOf = $request->get('as_of', now()->format('Y-m-d'));
 
-        $assets = Account::where('type', 'asset')->orderBy('code')->get()->map(function ($acc) use ($asOf) {
+        $assets = Account::where('type', 'asset')->orderBy('code')->get()->map(function ($acc) use ($asOf, $branchId) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('debit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('debit');
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('credit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('credit');
             $acc->balance = $debit - $credit;
             return $acc;
         });
 
-        $liabilities = Account::where('type', 'liability')->orderBy('code')->get()->map(function ($acc) use ($asOf) {
+        $liabilities = Account::where('type', 'liability')->orderBy('code')->get()->map(function ($acc) use ($asOf, $branchId) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('debit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('debit');
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('credit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('credit');
             $acc->balance = $credit - $debit;
             return $acc;
         });
 
-        $equities = Account::where('type', 'equity')->orderBy('code')->get()->map(function ($acc) use ($asOf) {
+        $equities = Account::where('type', 'equity')->orderBy('code')->get()->map(function ($acc) use ($asOf, $branchId) {
             $debit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('debit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('debit');
             $credit = JournalEntry::where('account_id', $acc->id)
-                ->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('credit');
+                ->whereHas('journal', function($q) use ($asOf, $branchId) {
+                    $q->where('status', 'posted')->where('date', '<=', $asOf);
+                    if ($branchId) $q->where('branch_id', $branchId);
+                })->sum('credit');
             $acc->balance = $credit - $debit;
             return $acc;
         });
@@ -175,19 +238,33 @@ class ReportController extends Controller
         $totalLiabilities = $liabilities->sum('balance');
         $totalEquity = $equities->sum('balance');
 
-        // Laba berjalan
-        $revenueTotal = Account::where('type', 'revenue')->get()->sum(function ($acc) use ($asOf) {
-            $d = JournalEntry::where('account_id', $acc->id)->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('debit');
-            $c = JournalEntry::where('account_id', $acc->id)->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('credit');
+        // Laba berjalan (Current Earnings)
+        $revenueTotal = Account::where('type', 'revenue')->get()->sum(function ($acc) use ($asOf, $branchId) {
+            $d = JournalEntry::where('account_id', $acc->id)->whereHas('journal', function($q) use ($asOf, $branchId) {
+                $q->where('status', 'posted')->where('date', '<=', $asOf);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->sum('debit');
+            $c = JournalEntry::where('account_id', $acc->id)->whereHas('journal', function($q) use ($asOf, $branchId) {
+                $q->where('status', 'posted')->where('date', '<=', $asOf);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->sum('credit');
             return $c - $d;
         });
-        $expenseTotal = Account::where('type', 'expense')->get()->sum(function ($acc) use ($asOf) {
-            $d = JournalEntry::where('account_id', $acc->id)->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('debit');
-            $c = JournalEntry::where('account_id', $acc->id)->whereHas('journal', fn($q) => $q->where('status', 'posted')->where('date', '<=', $asOf))->sum('credit');
+
+        $expenseTotal = Account::where('type', 'expense')->get()->sum(function ($acc) use ($asOf, $branchId) {
+            $d = JournalEntry::where('account_id', $acc->id)->whereHas('journal', function($q) use ($asOf, $branchId) {
+                $q->where('status', 'posted')->where('date', '<=', $asOf);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->sum('debit');
+            $c = JournalEntry::where('account_id', $acc->id)->whereHas('journal', function($q) use ($asOf, $branchId) {
+                $q->where('status', 'posted')->where('date', '<=', $asOf);
+                if ($branchId) $q->where('branch_id', $branchId);
+            })->sum('credit');
             return $d - $c;
         });
+        
         $currentEarnings = $revenueTotal - $expenseTotal;
 
-        return view('reports.balance-sheet', compact('assets','liabilities','equities','totalAssets','totalLiabilities','totalEquity','currentEarnings','asOf'));
+        return view('reports.balance-sheet', compact('assets','liabilities','equities','totalAssets','totalLiabilities','totalEquity','currentEarnings','asOf', 'branchId'));
     }
 }

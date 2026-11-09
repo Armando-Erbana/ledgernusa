@@ -32,6 +32,7 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
+        // PERBAIKAN: branch_id dihapus dari validate
         $data = $request->validate([
             'invoice_number' => 'required|string|max:50',
             'customer_id' => 'nullable|exists:customers,id',
@@ -62,6 +63,7 @@ class SaleController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $sale = Sale::create([
                 'company_id' => session('company_id'),
+                'branch_id'  => session('branch_id'), // PERBAIKAN: Tambahkan branch_id
                 'invoice_number' => $data['invoice_number'],
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -98,7 +100,6 @@ class SaleController extends Controller
                     'total_cost' => $totalCost,
                 ]);
 
-                // Kurangi stok kalau ada produk
                 if ($product && $product->track_stock && !empty($item['warehouse_id'])) {
                     $stockService->stockOut(
                         $product->id,
@@ -170,7 +171,6 @@ class SaleController extends Controller
         DB::transaction(function () use ($sale, $data, $subtotal, $discount, $tax, $total) {
             $stockService = new StockService();
 
-            // Kembalikan stok lama sebelum update
             foreach ($sale->items as $oldItem) {
                 if ($oldItem->product_id && $oldItem->warehouse_id) {
                     $product = Product::find($oldItem->product_id);
@@ -193,14 +193,12 @@ class SaleController extends Controller
                 }
             }
 
-            // Hapus jurnal & item lama
             if ($sale->journal) {
                 $sale->journal->entries()->delete();
                 $sale->journal->delete();
             }
             $sale->items()->delete();
 
-            // Update sale
             $sale->update([
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -212,7 +210,6 @@ class SaleController extends Controller
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // Buat item baru + kurangi stok
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
                 $product = !empty($item['product_id']) ? Product::find($item['product_id']) : null;
@@ -249,7 +246,6 @@ class SaleController extends Controller
                 }
             }
 
-            // Regenerate jurnal
             $journal = $sale->generateJournal();
             $sale->update(['journal_id' => $journal->id]);
         });
@@ -266,7 +262,6 @@ class SaleController extends Controller
         DB::transaction(function () use ($sale) {
             $stockService = new StockService();
 
-            // Kembalikan stok sebelum hapus
             foreach ($sale->items as $oldItem) {
                 if ($oldItem->product_id && $oldItem->warehouse_id) {
                     $product = Product::find($oldItem->product_id);

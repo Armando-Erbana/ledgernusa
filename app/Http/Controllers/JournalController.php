@@ -26,6 +26,7 @@ class JournalController extends Controller
 
     public function store(Request $request)
     {
+        // PERBAIKAN: branch_id dihapus dari validate
         $data = $request->validate([
             'date' => 'required|date',
             'reference' => 'nullable|string',
@@ -46,6 +47,7 @@ class JournalController extends Controller
         DB::transaction(function () use ($data) {
             $journal = Journal::create([
                 'company_id' => session('company_id'),
+                'branch_id'  => session('branch_id'), // PERBAIKAN: Tambahkan branch_id
                 'date' => $data['date'],
                 'reference' => $data['reference'] ?? null,
                 'description' => $data['description'] ?? null,

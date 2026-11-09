@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +12,9 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = ['name', 'email', 'password', 'is_super_admin'];
+    
     protected $hidden = ['password', 'remember_token'];
+    
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -22,6 +25,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Company::class, 'company_users')
                     ->withPivot('role')->withTimestamps();
+    }
+
+    // TAMBAHKAN RELASI BRANCHES INI
+    public function branches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_user')->withTimestamps();
     }
 
     public function activeCompany()
@@ -35,7 +44,7 @@ class User extends Authenticatable
     }
 
     public function isSuperAdmin(): bool
-{
-    return (bool) $this->is_super_admin;
-}
+    {
+        return (bool) $this->is_super_admin;
+    }
 }

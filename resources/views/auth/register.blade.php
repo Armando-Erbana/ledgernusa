@@ -48,16 +48,32 @@
             pointer-events: none;
         }
 
+        /* --- BRANDING GROUP --- */
+        .ln-brand-wrap {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
         .ln-mark {
             display: inline-flex;
             align-items: center;
-            position: relative;
-            z-index: 1;
             background: #F7F7F5;
             padding: 10px 16px;
             border-radius: 10px;
         }
         .ln-mark img { height: 26px; width: auto; display: block; }
+        
+        .ln-by {
+            font-size: 12px;
+            font-weight: 500;
+            color: #8B96A9;
+            letter-spacing: 0.02em;
+            padding-left: 4px;
+        }
+        .ln-by b { color: #EDEFF4; font-weight: 600; }
 
         .ln-tagline {
             position: relative;
@@ -71,28 +87,28 @@
         }
         .ln-tagline b { color: #4FC3EC; font-weight: 600; }
 
+        /* ---- Fitur (Tanpa Ikon) ---- */
         .ln-features {
             position: relative;
             z-index: 1;
             margin-top: 40px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
         }
-        .ln-feature { display: flex; align-items: flex-start; gap: 14px; }
-        .ln-feature .ico {
-            flex: none;
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: rgba(79, 195, 236, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .ln-feature { position: relative; padding-left: 16px; }
+        .ln-feature::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 4px;
+            bottom: 4px;
+            width: 2px;
+            background: rgba(79, 195, 236, 0.4);
+            border-radius: 2px;
         }
-        .ln-feature .ico svg { width: 17px; height: 17px; stroke: #4FC3EC; }
-        .ln-feature .txt b { display: block; font-size: 14px; color: #EDEFF4; font-weight: 500; }
-        .ln-feature .txt span { font-size: 12.5px; color: #8B96A9; }
+        .ln-feature .txt b { display: block; font-size: 14.5px; color: #EDEFF4; font-weight: 500; margin-bottom: 3px; }
+        .ln-feature .txt span { font-size: 13px; color: #8B96A9; line-height: 1.4; }
 
         .ln-foot { position: relative; z-index: 1; font-size: 12px; color: #6E7A8E; }
 
@@ -152,31 +168,42 @@
         {{-- Left: brand panel --}}
         <div class="ln-panel">
             <div>
-                <div class="ln-mark">
-                    <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                <div class="ln-brand-wrap">
+                    <div class="ln-mark">
+                        <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                    </div>
+                    <div class="ln-by">by <b>Mangata Nusantara Teknologi</b></div>
                 </div>
+                
                 <p class="ln-display ln-tagline">
                     Buat akun, dan mulai catat<br>
                     keuangan bisnis <b>dengan rapi</b>.
                 </p>
             </div>
 
+            {{-- Fitur Teks Saja (Ikon Dihapus) --}}
             <div class="ln-features">
                 <div class="ln-feature">
-                    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div>
-                    <div class="txt"><b>Jurnal otomatis tersinkron</b><span>Setiap transaksi langsung masuk ke buku besar</span></div>
+                    <div class="txt">
+                        <b>Jurnal otomatis tersinkron</b>
+                        <span>Setiap transaksi langsung masuk ke buku besar</span>
+                    </div>
                 </div>
                 <div class="ln-feature">
-                    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"/></svg></div>
-                    <div class="txt"><b>Laporan keuangan real-time</b><span>Neraca dan laba rugi selalu up to date</span></div>
+                    <div class="txt">
+                        <b>Laporan keuangan real-time</b>
+                        <span>Neraca dan laba rugi selalu up to date</span>
+                    </div>
                 </div>
                 <div class="ln-feature">
-                    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></div>
-                    <div class="txt"><b>Multi-perusahaan</b><span>Kelola beberapa entitas dalam satu akun</span></div>
+                    <div class="txt">
+                        <b>Multi-perusahaan</b>
+                        <span>Kelola beberapa entitas dalam satu akun</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="ln-foot">© {{ date('Y') }} LedgerNusa. Sistem akuntansi untuk bisnis modern.</div>
+            <div class="ln-foot">© {{ date('Y') }} Mangata Nusantara Teknologi. All rights reserved.</div>
         </div>
 
         {{-- Right: form --}}

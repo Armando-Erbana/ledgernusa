@@ -17,17 +17,30 @@
     <div class="ln-stat kas"><div class="lbl">Total Net (Bayar)</div><div class="val">Rp {{ number_format($payroll->total_net, 0, ',', '.') }}</div></div>
 </div>
 
-@if($payroll->status === 'draft')
-    <form method="POST" action="{{ route('payrolls.post', $payroll) }}" class="mb-4">
-        @csrf
-        <button class="ln-btn-primary" onclick="return confirm('Posting payroll ini? Jurnal akan otomatis dibuat.')">✓ Posting Payroll</button>
-    </form>
-@elseif($payroll->status === 'posted')
-    <form method="POST" action="{{ route('payrolls.mark-paid', $payroll) }}" class="mb-4">
-        @csrf
-        <button class="ln-btn-primary" onclick="return confirm('Tandai payroll sudah dibayar?')">💰 Tandai Sudah Dibayar</button>
-    </form>
-@endif
+<div class="flex items-center gap-3 mb-6">
+    @if($payroll->status === 'draft')
+        <form method="POST" action="{{ route('payrolls.post', $payroll) }}">
+            @csrf
+            <button class="ln-btn-primary" onclick="return confirm('Posting payroll ini? Jurnal akan otomatis dibuat.')">✓ Posting Payroll</button>
+        </form>
+    @elseif($payroll->status === 'posted')
+        <form method="POST" action="{{ route('payrolls.mark-paid', $payroll) }}">
+            @csrf
+            <button class="ln-btn-primary" onclick="return confirm('Tandai payroll sudah dibayar?')"> Tandai Sudah Dibayar</button>
+        </form>
+    @endif
+
+    {{-- TOMBOL HAPUS (Hanya muncul jika belum dibayar) --}}
+    @if($payroll->status !== 'paid')
+        <form method="POST" action="{{ route('payrolls.destroy', $payroll) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Payroll ini? Jurnal dan rincian gaji terkait akan ikut terhapus permanen.')">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors">
+                Hapus Payroll
+            </button>
+        </form>
+    @endif
+</div>
 
 <h2 class="ln-section-title">Detail Karyawan</h2>
 <div class="ln-table-card">

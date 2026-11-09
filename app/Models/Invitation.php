@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -6,8 +7,24 @@ use Illuminate\Support\Str;
 
 class Invitation extends Model
 {
-    protected $fillable = ['company_id','email','role','token','invited_by','expires_at','accepted_at'];
-    protected $casts = ['expires_at' => 'datetime', 'accepted_at' => 'datetime'];
+    // TAMBAHKAN 'branch_ids' DI SINI
+    protected $fillable = [
+        'company_id', 
+        'email', 
+        'role', 
+        'branch_ids', // <-- Tambahan
+        'token', 
+        'invited_by', 
+        'expires_at', 
+        'accepted_at'
+    ];
+
+    // TAMBAHKAN CASTS UNTUK branch_ids
+    protected $casts = [
+        'branch_ids' => 'array', // <-- Tambahan (agar JSON otomatis jadi array)
+        'expires_at' => 'datetime', 
+        'accepted_at' => 'datetime'
+    ];
 
     public function company() { return $this->belongsTo(Company::class); }
     public function inviter() { return $this->belongsTo(User::class, 'invited_by'); }

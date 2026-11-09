@@ -2,26 +2,6 @@
 @section('title', 'Undang User')
 @section('content')
 
-<style>
-/* ===== Hanya tombol: gelap → biru (2-tone: #2563EB, #1E3A8A) ===== */
-.ln-btn-primary{
-    background:linear-gradient(180deg,#2563EB,#1E3A8A) !important;
-    border-color:transparent !important;
-    color:#fff !important;
-}
-.ln-btn-primary:hover{
-    background:linear-gradient(180deg,#1E3A8A,#1E3A8A) !important;
-}
-.ln-btn-outline{
-    color:#1E3A8A !important;
-    border-color:rgba(37,99,235,.35) !important;
-}
-.ln-btn-outline:hover{
-    background:rgba(37,99,235,.08) !important;
-    border-color:rgba(37,99,235,.55) !important;
-}
-</style>
-
 <div class="ln-page-head">
     <div>
         <h1 class="ln-page-title">Undang User</h1>
@@ -88,8 +68,34 @@
                     <option value="admin">Admin</option>
                 </select>
             </div>
-            <div class="text-xs text-gray-500">
-                Link undangan berlaku <strong>7 hari</strong>. Penerima akan menerima email berisi tombol untuk bergabung.
+
+            {{-- TAMBAHKAN LOGIKA PILIH CABANG DI SINI --}}
+            @php
+                $planCode = strtolower(auth()->user()->activeCompany()->subscription?->plan?->code ?? 'starter');
+                $isPro = in_array($planCode, ['pro', 'enterprise']);
+                $branches = $isPro ? \App\Models\Branch::where('company_id', session('company_id'))->get() : collect();
+            @endphp
+
+            @if($isPro && $branches->count() > 0)
+            <div class="pt-2 border-t border-[var(--hair)] mt-2">
+                <label class="ln-label text-blue-600">Akses Cabang</label>
+                <p class="text-xs text-[var(--mute)] mb-2">Pilih cabang yang bisa dikelola. Kosongkan jika ingin memberi akses ke semua cabang (Pusat).</p>
+                <div class="space-y-2 max-h-40 overflow-y-auto pr-2">
+                    @foreach($branches as $b)
+                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[rgba(0,0,0,.03)] rounded-lg transition">
+                            <input type="checkbox" name="branch_ids[]" value="{{ $b->id }}" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm text-[var(--ink)] font-medium">{{ $b->name }}</span>
+                            @if($b->is_main)
+                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase font-bold">Pusat</span>
+                            @endif
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <div class="text-xs text-[var(--mute)] pt-2">
+                Link undangan berlaku <strong>7 hari</strong>.
             </div>
             <button class="ln-btn-primary w-full justify-center">Kirim Undangan</button>
         </form>

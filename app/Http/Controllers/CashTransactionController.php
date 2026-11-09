@@ -66,6 +66,7 @@ class CashTransactionController extends Controller
 
     public function store(Request $request)
     {
+        // PERBAIKAN: branch_id dihapus dari validate
         $data = $request->validate([
             'type' => 'required|in:in,out',
             'date' => 'required|date',
@@ -77,6 +78,8 @@ class CashTransactionController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
+        // PERBAIKAN: Tambahkan branch_id setelah validasi
+        $data['branch_id'] = session('branch_id');
         $data['company_id'] = session('company_id');
         $data['created_by'] = auth()->id();
         $data['status'] = 'posted';
@@ -131,16 +134,13 @@ class CashTransactionController extends Controller
         ]);
 
         DB::transaction(function () use ($cash, $data) {
-            // Hapus jurnal lama
             if ($cash->journal) {
                 $cash->journal->entries()->delete();
                 $cash->journal->delete();
             }
 
-            // Update cash transaction
             $cash->update($data);
 
-            // Generate ulang jurnal
             $journal = $cash->generateJournal();
             $cash->update(['journal_id' => $journal->id]);
         });

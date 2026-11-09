@@ -12,7 +12,7 @@ class Sale extends Model
     use HasFactory, BelongsToCompany, Auditable;
 
     protected $fillable = [
-        'company_id', 'journal_id', 'invoice_number', 'customer_id',
+        'company_id', 'branch_id', 'journal_id', 'invoice_number', 'customer_id',
         'date', 'due_date', 'type', 'subtotal', 'discount', 'tax',
         'total', 'paid_amount', 'status', 'notes', 'created_by',
     ];

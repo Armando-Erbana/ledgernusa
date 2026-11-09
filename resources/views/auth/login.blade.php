@@ -12,7 +12,6 @@
         html, body { height: 100%; margin: 0; }
         body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         .ln-display { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; }
-        .ln-tabular { font-variant-numeric: tabular-nums; }
 
         .ln-shell {
             display: grid;
@@ -49,16 +48,32 @@
             pointer-events: none;
         }
 
+        /* --- BRANDING GROUP --- */
+        .ln-brand-wrap {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
         .ln-mark {
             display: inline-flex;
             align-items: center;
-            position: relative;
-            z-index: 1;
             background: #F7F7F5;
             padding: 10px 16px;
             border-radius: 10px;
         }
         .ln-mark img { height: 26px; width: auto; display: block; }
+        
+        .ln-by {
+            font-size: 12px;
+            font-weight: 500;
+            color: #8B96A9;
+            letter-spacing: 0.02em;
+            padding-left: 4px;
+        }
+        .ln-by b { color: #EDEFF4; font-weight: 600; }
 
         .ln-tagline {
             position: relative;
@@ -81,11 +96,7 @@
             flex-direction: column;
             gap: 18px;
         }
-        .ln-feature {
-            position: relative;
-            padding-left: 16px;
-        }
-        /* Garis aksen pengganti ikon */
+        .ln-feature { position: relative; padding-left: 16px; }
         .ln-feature::before {
             content: "";
             position: absolute;
@@ -99,12 +110,7 @@
         .ln-feature .txt b { display: block; font-size: 14.5px; color: #EDEFF4; font-weight: 500; margin-bottom: 3px; }
         .ln-feature .txt span { font-size: 13px; color: #8B96A9; line-height: 1.4; }
 
-        .ln-foot {
-            position: relative;
-            z-index: 1;
-            font-size: 12px;
-            color: #6E7A8E;
-        }
+        .ln-foot { position: relative; z-index: 1; font-size: 12px; color: #6E7A8E; }
 
         /* ---- Right panel: the form ---- */
         .ln-form-col {
@@ -188,16 +194,20 @@
         {{-- Left: brand / ledger panel --}}
         <div class="ln-panel">
             <div>
-                <div class="ln-mark">
-                    <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                <div class="ln-brand-wrap">
+                    <div class="ln-mark">
+                        <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                    </div>
+                    <div class="ln-by">by <b>Mangata Nusantara Teknologi</b></div>
                 </div>
+                
                 <p class="ln-display ln-tagline">
                     Setiap transaksi tercatat rapi,<br>
                     setiap laporan <b>selalu balance</b>.
                 </p>
             </div>
 
-            {{-- Fitur Teks Saja (Ikon Dihapus) --}}
+            {{-- Fitur Teks Saja --}}
             <div class="ln-features">
                 <div class="ln-feature">
                     <div class="txt">
@@ -219,7 +229,7 @@
                 </div>
             </div>
 
-            <div class="ln-foot">© {{ date('Y') }} LedgerNusa. Sistem akuntansi untuk bisnis modern.</div>
+            <div class="ln-foot">© {{ date('Y') }} Mangata Nusantara Teknologi. All rights reserved.</div>
         </div>
 
         {{-- Right: form --}}

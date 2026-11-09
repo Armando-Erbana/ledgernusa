@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Mail\InvitationMail;
@@ -24,9 +25,12 @@ class InvitationController extends Controller
 
     public function store(Request $request)
     {
+        // TAMBAHKAN VALIDASI branch_ids
         $data = $request->validate([
             'email' => 'required|email',
             'role' => 'required|in:admin,staff',
+            'branch_ids' => 'nullable|array',
+            'branch_ids.*' => 'exists:branches,id'
         ]);
 
         $companyId = session('company_id');
@@ -59,15 +63,16 @@ class InvitationController extends Controller
                 'company_id' => $companyId,
                 'email' => $data['email'],
                 'role' => $data['role'],
+                'branch_ids' => $data['branch_ids'] ?? [], // <-- SIMPAN CABANG
                 'token' => Invitation::generateToken(),
                 'invited_by' => auth()->id(),
                 'expires_at' => now()->addDays(7),
             ]);
 
-            // Kirim email (kalau MAIL sudah dikonfigurasi)
+            // Kirim email
             try {
                 Mail::to($data['email'])->send(new InvitationMail($invitation));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 \Log::warning('Invitation mail failed: ' . $e->getMessage());
             }
         });
@@ -110,6 +115,12 @@ class InvitationController extends Controller
 
         DB::transaction(function () use ($user, $invitation) {
             $user->companies()->attach($invitation->company_id, ['role' => $invitation->role]);
+            
+            // TAMBAHKAN: Attach ke cabang jika ada
+            if (!empty($invitation->branch_ids)) {
+                $user->branches()->attach($invitation->branch_ids);
+            }
+            
             $invitation->update(['accepted_at' => now()]);
             session(['company_id' => $invitation->company_id]);
         });

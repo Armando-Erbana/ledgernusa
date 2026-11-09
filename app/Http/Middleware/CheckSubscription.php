@@ -2,44 +2,47 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Company;
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+use App\Models\Subscription;
 
 class CheckSubscription
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check()) {
-            return $next($request);
+        $user = auth()->user();
+        $company = $user->activeCompany();
+        
+        if (!$company) {
+            return redirect()->route('companies.index');
         }
 
-        $companyId = session('company_id');
-        if (!$companyId) {
-            return $next($request);
-        }
+        // Cek apakah ada langganan aktif ATAU sedang dalam masa trial
+        $activeSub = Subscription::where('company_id', $company->id)
+            ->where(function($q) {
+                $q->where(function($sub1) {
+                    $sub1->where('status', 'active')->where('ends_at', '>=', now());
+                })->orWhere(function($sub2) {
+                    $sub2->where('trial_ends_at', '>=', now());
+                });
+            })
+            ->first();
 
-        $company = Company::find($companyId);
-        $sub = $company?->subscription;
-
-        // Belum ada subscription = boleh
-        if (!$sub) {
-            return $next($request);
-        }
-
-        // Aktif atau trial = lanjut
-        if ($sub->isActive()) {
-            if ($sub->status === 'trial') {
-                session()->flash('trial_days', $sub->daysRemaining());
+        if (!$activeSub) {
+            // Mode Read-Only (Blokir jika bukan GET, atau GET tapi ke form create/edit)
+            if ($request->isMethod('get')) {
+                if ($request->routeIs('*.create') || $request->routeIs('*.edit')) {
+                    return redirect()->route('subscription.index')
+                        ->with('error', 'Masa trial habis. Silakan berlangganan untuk menambah data.');
+                }
+                return $next($request);
             }
-            return $next($request);
+
+            return redirect()->route('subscription.index')
+                ->with('error', 'Masa trial habis. Silakan berlangganan untuk menyimpan data baru.');
         }
 
-        // Expired: hanya boleh akses subscription & logout
-        if ($request->routeIs('subscription.*') || $request->routeIs('logout')) {
-            return $next($request);
-        }
-
-        return redirect()->route('subscription.expired');
+        return $next($request);
     }
 }

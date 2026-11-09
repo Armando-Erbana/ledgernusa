@@ -10,7 +10,7 @@ class Purchase extends Model
 {
     use HasFactory, BelongsToCompany, Auditable;
     protected $fillable = [
-        'company_id','journal_id','bill_number','supplier_id','date','due_date','type',
+        'company_id', 'branch_id', 'journal_id','bill_number','supplier_id','date','due_date','type',
         'subtotal','discount','tax','total','paid_amount','status','notes','created_by',
     ];
     protected $casts = [

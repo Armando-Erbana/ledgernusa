@@ -10,6 +10,7 @@ class Journal extends Model
 {
     protected $fillable = [
         'company_id',
+        'branch_id',
         'date',
         'currency',
         'exchange_rate',
