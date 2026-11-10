@@ -108,34 +108,37 @@ const revenueAccounts = @json($revAccs);
 const products = @json($prodList);
 const warehouses = @json($whList);
 const body = document.getElementById('itemBody');
+let rowIndex = 0; // <-- TAMBAHKAN VARIABEL INDEX
 
 function addRow() {
     const tr = document.createElement('tr');
+    // GUNAKAN rowIndex UNTUK SETIAP NAME INPUT
     tr.innerHTML = `
         <td>
-            <select name="items[][product_id]" class="ln-select ln-input-sm product-select" onchange="onProductChange(this)">
+            <select name="items[${rowIndex}][product_id]" class="ln-select ln-input-sm product-select" onchange="onProductChange(this)">
                 <option value="">- Non Produk -</option>
                 ${products.map(p => `<option value="${p.id}" data-price="${p.sell_price}">${p.code} - ${p.name}</option>`).join('')}
             </select>
         </td>
         <td>
-            <select name="items[][warehouse_id]" class="ln-select ln-input-sm">
+            <select name="items[${rowIndex}][warehouse_id]" class="ln-select ln-input-sm">
                 ${warehouses.map(w => `<option value="${w.id}" ${w.is_default ? 'selected' : ''}>${w.name}</option>`).join('')}
             </select>
         </td>
         <td>
-            <select name="items[][account_id]" class="ln-select ln-input-sm" required>
+            <select name="items[${rowIndex}][account_id]" class="ln-select ln-input-sm" required>
                 <option value="">- Pilih Akun -</option>
                 ${revenueAccounts.map(a => `<option value="${a.id}">${a.label}</option>`).join('')}
             </select>
         </td>
-        <td><input type="text" name="items[][description]" required class="ln-input ln-input-sm" placeholder="Nama barang/jasa"></td>
-        <td><input type="number" name="items[][qty]" value="1" min="0.01" step="0.01" class="ln-input ln-input-sm qty" style="text-align:right" oninput="calc()"></td>
-        <td><input type="number" name="items[][price]" value="0" min="0" step="0.01" class="ln-input ln-input-sm price" style="text-align:right" oninput="calc()"></td>
-        <td><input type="number" name="items[][discount]" value="0" min="0" step="0.01" class="ln-input ln-input-sm disc" style="text-align:right" oninput="calc()"></td>
+        <td><input type="text" name="items[${rowIndex}][description]" required class="ln-input ln-input-sm desc" placeholder="Nama barang/jasa"></td>
+        <td><input type="number" name="items[${rowIndex}][qty]" value="1" min="0.01" step="0.01" class="ln-input ln-input-sm qty" style="text-align:right" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][price]" value="0" min="0" step="0.01" class="ln-input ln-input-sm price" style="text-align:right" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][discount]" value="0" min="0" step="0.01" class="ln-input ln-input-sm disc" style="text-align:right" oninput="calc()"></td>
         <td class="text-right subtotal">0</td>
         <td class="text-center"><button type="button" onclick="this.closest('tr').remove(); calc()" class="ln-remove-btn">✕</button></td>
     `;
+    rowIndex++; // <-- INCREMENT INDEX
     body.appendChild(tr);
     calc();
 }
@@ -147,7 +150,8 @@ function onProductChange(select) {
     if (price && parseFloat(price) > 0) {
         tr.querySelector('.price').value = price;
         const name = option.text.split(' - ').slice(1).join(' - ');
-        const descInput = tr.querySelector('input[name="items[][description]"]');
+        // Gunakan class .desc agar tidak error karena name dinamis
+        const descInput = tr.querySelector('.desc');
         if (descInput && !descInput.value) descInput.value = name;
         calc();
     }

@@ -203,18 +203,21 @@
 <script>
 const expAccounts = @json($expenseAccounts->map(fn($a) => ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name]));
 const body = document.getElementById('itemBody');
+let rowIndex = 0; // <-- TAMBAHKAN VARIABEL INDEX
 
 function addRow() {
     const tr = document.createElement('tr');
+    // GUNAKAN rowIndex UNTUK SETIAP NAME INPUT
     tr.innerHTML = `
-        <td><select name="items[][account_id]" class="dz-sel sm" required><option value="">- Pilih -</option>${expAccounts.map(a => `<option value="${a.id}">${a.label}</option>`).join('')}</select></td>
-        <td><input type="text" name="items[][description]" required class="dz-in sm"></td>
-        <td><input type="number" name="items[][qty]" value="1" min="0.01" step="0.01" class="dz-in sm r qty" oninput="calc()"></td>
-        <td><input type="number" name="items[][price]" value="0" min="0" step="0.01" class="dz-in sm r price" oninput="calc()"></td>
-        <td><input type="number" name="items[][discount]" value="0" min="0" step="0.01" class="dz-in sm r disc" oninput="calc()"></td>
+        <td><select name="items[${rowIndex}][account_id]" class="dz-sel sm" required><option value="">- Pilih -</option>${expAccounts.map(a => `<option value="${a.id}">${a.label}</option>`).join('')}</select></td>
+        <td><input type="text" name="items[${rowIndex}][description]" required class="dz-in sm"></td>
+        <td><input type="number" name="items[${rowIndex}][qty]" value="1" min="0.01" step="0.01" class="dz-in sm r qty" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][price]" value="0" min="0" step="0.01" class="dz-in sm r price" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][discount]" value="0" min="0" step="0.01" class="dz-in sm r disc" oninput="calc()"></td>
         <td class="subtotal">0</td>
         <td style="text-align:center;"><button type="button" onclick="this.closest('tr').remove(); calc()" class="dz-rm">✕</button></td>
     `;
+    rowIndex++; // <-- INCREMENT INDEX UNTUK BARIS BARU
     body.appendChild(tr); calc();
 }
 

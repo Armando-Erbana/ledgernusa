@@ -131,20 +131,23 @@
 <script>
 const accounts = @json($accounts->map(fn($a) => ['id' => $a->id, 'label' => $a->code . ' - ' . $a->name]));
 const body = document.getElementById('entriesBody');
+let rowIndex = 0; // Tambahkan variabel index
 
 function addRow() {
     const tr = document.createElement('tr');
+    // GUNAKAN rowIndex UNTUK NAME INPUT
     tr.innerHTML = `
         <td>
-            <select name="entries[][account_id]" class="dz-sel sm" required>
+            <select name="entries[${rowIndex}][account_id]" class="dz-sel sm" required>
                 <option value="">- Pilih Akun -</option>
                 ${accounts.map(a => `<option value="${a.id}">${a.label}</option>`).join('')}
             </select>
         </td>
-        <td><input type="number" step="0.01" name="entries[][debit]" value="0" class="dz-in sm r debit" oninput="calc()"></td>
-        <td><input type="number" step="0.01" name="entries[][credit]" value="0" class="dz-in sm r credit" oninput="calc()"></td>
+        <td><input type="number" step="0.01" name="entries[${rowIndex}][debit]" value="0" class="dz-in sm r debit" oninput="calc()"></td>
+        <td><input type="number" step="0.01" name="entries[${rowIndex}][credit]" value="0" class="dz-in sm r credit" oninput="calc()"></td>
         <td style="text-align:center;"><button type="button" onclick="this.closest('tr').remove(); calc()" class="dz-rm">✕</button></td>
     `;
+    rowIndex++; // Increment index untuk baris berikutnya
     body.appendChild(tr);
     calc();
 }

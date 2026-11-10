@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PurchaseController extends Controller
 {
@@ -35,23 +36,35 @@ class PurchaseController extends Controller
 
     public function store(Request $request)
     {
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['account_id']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'bill_number' => 'required|string|max:50',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:date',
-            'type' => 'required|in:cash,credit',
+            'type' => 'required|in:cash,credit', 
             'discount' => 'nullable|numeric|min:0',
             'tax' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.account_id' => 'required|exists:accounts,id',
-            'items.*.product_id' => 'nullable|exists:products,id',
-            'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
             'items.*.description' => 'required|string|max:255',
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dibeli.',
+            'items.*.account_id.required' => 'Akun COA pada baris item belum dipilih.',
+            'items.*.description.required' => 'Deskripsi barang pada baris item belum diisi.',
+            'items.*.qty.required' => 'Qty pada baris item belum diisi.',
+            'items.*.price.required' => 'Harga pada baris item belum diisi.',
         ]);
 
         $subtotal = 0;
@@ -65,6 +78,7 @@ class PurchaseController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $purchase = Purchase::create([
                 'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'),
                 'bill_number' => $data['bill_number'],
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'date' => $data['date'],
@@ -95,7 +109,6 @@ class PurchaseController extends Controller
                     'subtotal' => $itemSubtotal,
                 ]);
 
-                // Tambah stok kalau ada produk
                 if (!empty($item['product_id']) && !empty($item['warehouse_id'])) {
                     $product = Product::find($item['product_id']);
                     if ($product && $product->track_stock) {
@@ -126,7 +139,7 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase)
     {
-        $purchase->load(['supplier', 'items.account', 'items.product', 'payments.cashAccount', 'journal.entries.account']);
+        $purchase->load(['supplier', 'items.account', 'items.product', 'payments.cashAccount', 'journal.entries.account', 'company']);
         return view('purchases.show', compact('purchase'));
     }
 
@@ -144,6 +157,13 @@ class PurchaseController extends Controller
     {
         if ($purchase->status === 'paid') abort(403);
 
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['account_id']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'supplier_id' => 'nullable|exists:suppliers,id',
             'date' => 'required|date',
@@ -172,7 +192,6 @@ class PurchaseController extends Controller
         DB::transaction(function () use ($purchase, $data, $subtotal, $discount, $tax, $total) {
             $stockService = new StockService();
 
-            // Kembalikan (kurangi) stok lama sebelum update
             foreach ($purchase->items as $oldItem) {
                 if ($oldItem->product_id && $oldItem->warehouse_id) {
                     $product = Product::find($oldItem->product_id);
@@ -194,14 +213,12 @@ class PurchaseController extends Controller
                 }
             }
 
-            // Hapus jurnal & item lama
             if ($purchase->journal) {
                 $purchase->journal->entries()->delete();
                 $purchase->journal->delete();
             }
             $purchase->items()->delete();
 
-            // Update purchase
             $purchase->update([
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'date' => $data['date'],
@@ -213,7 +230,6 @@ class PurchaseController extends Controller
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // Buat item baru + tambah stok
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
                 $purchase->items()->create([
@@ -248,7 +264,6 @@ class PurchaseController extends Controller
                 }
             }
 
-            // Regenerate jurnal
             $journal = $purchase->generateJournal();
             $purchase->update(['journal_id' => $journal->id]);
         });
@@ -265,7 +280,6 @@ class PurchaseController extends Controller
         DB::transaction(function () use ($purchase) {
             $stockService = new StockService();
 
-            // Kurangi stok sebelum hapus (karena ini pembelian = stok masuk)
             foreach ($purchase->items as $oldItem) {
                 if ($oldItem->product_id && $oldItem->warehouse_id) {
                     $product = Product::find($oldItem->product_id);
@@ -296,5 +310,15 @@ class PurchaseController extends Controller
         });
 
         return redirect()->route('purchases.index')->with('success', 'Pembelian dihapus.');
+    }
+
+    public function exportPdf(Purchase $purchase)
+    {
+        $purchase->load(['supplier', 'items.account', 'items.product', 'company']);
+
+        $pdf = Pdf::loadView('pdf.purchase', compact('purchase'));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download('Bill-' . $purchase->bill_number . '.pdf');
     }
 }

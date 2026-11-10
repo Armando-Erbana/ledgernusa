@@ -114,7 +114,7 @@ class AiAssistantController extends Controller
     }
 
     /**
-     * LAPIS 2: Fallback ke Gemini (hybrid, tanpa branding).
+     * LAPIS 2: Fallback ke Gemini dengan Membaca Manual Book.
      */
     private function askGemini(string $message, AiConversation $conversation): ?array
     {
@@ -123,6 +123,10 @@ class AiAssistantController extends Controller
             Log::warning('Gemini: API key kosong di config');
             return null;
         }
+
+        // 1. BACA FILE MANUAL BOOK
+        $manualPath = storage_path('app/manual/LedgerNusa_User_Manual.md');
+        $manualContent = file_exists($manualPath) ? file_get_contents($manualPath) : 'Manual book belum tersedia.';
 
         // Ambil riwayat chat untuk konteks (maks 6 pesan terakhir)
         $history = AiMessage::where('conversation_id', $conversation->id)
@@ -151,6 +155,7 @@ class AiAssistantController extends Controller
         $company = \App\Models\Company::find(session('company_id'));
         $user = auth()->user();
 
+        // 2. SUSUN SYSTEM PROMPT DENGAN MENYISIPKAN MANUAL BOOK
         $systemPrompt = "Kamu adalah Asisten LedgerNusa, asisten virtual untuk aplikasi akuntansi LedgerNusa yang membantu UMKM Indonesia.\n\n"
             . "GAYA JAWAB:\n"
             . "- Bahasa Indonesia santai, ramah, profesional\n"
@@ -158,32 +163,30 @@ class AiAssistantController extends Controller
             . "- Kalau user tanya 'cara X', kasih langkah bernomor\n"
             . "- Jangan pernah sebut dirimu sebagai AI dari Google, Gemini, atau platform lain\n"
             . "- Kalau tidak tahu, katakan dengan jujur\n\n"
-            . "TENTANG APLIKASI LEDGERNUSA:\n"
-            . "Menu utama: Dashboard, Kas & Bank, Penjualan, Pembelian, Jurnal, COA, Laporan, Persediaan, Aset Tetap, Pajak.\n"
-            . "Fitur: Chart of Accounts, Jurnal Umum, Buku Besar, Laba Rugi, Neraca, Neraca Saldo, Penjualan & Piutang, "
-            . "Pembelian & Hutang, Kas Masuk/Keluar, Transfer, Aset Tetap + Depresiasi, PPN, PPh 23, Persediaan dengan "
-            . "Weighted Average, Multi-User, Multi-Company, PWA (installable ke HP).\n\n"
             . "KONTEKS USER:\n"
             . "- Nama: {$user->name}\n"
             . "- Perusahaan: " . ($company->name ?? 'Belum ada') . "\n"
             . "- Role: " . ($user->roleInActiveCompany() ?? '-') . "\n\n"
             . "ATURAN PENTING:\n"
-            . "- Untuk pertanyaan akuntansi umum, jawab dengan pengetahuanmu\n"
-            . "- Untuk pertanyaan tentang aplikasi LedgerNusa, jawab sesuai fitur di atas\n"
-            . "- Jangan mengarang fitur yang tidak ada di LedgerNusa\n"
-            . "- Jangan pernah menyebut 'Gemini', 'Google', 'AI saya' — kamu adalah Asisten LedgerNusa";
+            . "1. Gunakan dokumen manual book di bawah ini sebagai referensi UTAMA untuk menjawab pertanyaan tentang cara pakai aplikasi.\n"
+            . "2. Jika pertanyaan seputar akuntansi umum, jawab dengan pengetahuanmu.\n"
+            . "3. Jangan mengarang fitur yang tidak ada di manual.\n"
+            . "4. Jangan pernah menyebut 'Gemini', 'Google', 'AI saya' — kamu adalah Asisten LedgerNusa.\n\n"
+            . "=== DOKUMEN MANUAL BOOK LEDGERNUSA ===\n"
+            . $manualContent . "\n"
+            . "=====================================\n";
 
         try {
             $response = Http::timeout(20)
                 ->withHeaders(['Content-Type' => 'application/json'])
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={$apiKey}", [
+                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}", [
                     'system_instruction' => [
                         'parts' => [['text' => $systemPrompt]],
                     ],
                     'contents' => $contents,
                     'generationConfig' => [
-                        'temperature' => 0.7,
-                        'maxOutputTokens' => 500,
+                        'temperature' => 0.5, // Diturunkan sedikit agar AI lebih patuh pada manual
+                        'maxOutputTokens' => 800, // Dinaikkan karena jawaban langkah-langkah butuh token lebih banyak
                         'topP' => 0.95,
                     ],
                 ]);

@@ -26,7 +26,7 @@
     @elseif($payroll->status === 'posted')
         <form method="POST" action="{{ route('payrolls.mark-paid', $payroll) }}">
             @csrf
-            <button class="ln-btn-primary" onclick="return confirm('Tandai payroll sudah dibayar?')"> Tandai Sudah Dibayar</button>
+            <button class="ln-btn-primary" onclick="return confirm('Tandai payroll sudah dibayar?')">Tandai Sudah Dibayar</button>
         </form>
     @endif
 
@@ -67,7 +67,9 @@
                 <td class="num">Rp {{ number_format($item->pph21, 0, ',', '.') }}</td>
                 <td class="num">Rp {{ number_format($item->bpjs_kesehatan + $item->bpjs_ketenagakerjaan, 0, ',', '.') }}</td>
                 <td class="num">Rp {{ number_format($item->net_salary, 0, ',', '.') }}</td>
-                <td class="center"><a href="{{ route('payrolls.slip', [$payroll, $item]) }}" target="_blank" class="ln-action">Slip</a></td>
+                <td class="center">
+                    <a href="{{ route('payrolls.slip', [$payroll, $item]) }}" class="ln-action">Slip</a>
+                </td>
             </tr>
         @endforeach
         </tbody>

@@ -29,10 +29,13 @@
 
     <div>
         <label class="ln-label">Purchase Order (opsional)</label>
-        <select name="purchase_order_id" class="ln-select">
-            <option value="">- Tanpa PO (GR manual) -</option>
+        <!-- Tambahkan onchange dan data-items -->
+        <select name="purchase_order_id" class="ln-select" onchange="onPOChange(this)">
+            <option value="" data-items="[]">- Tanpa PO (GR manual) -</option>
             @foreach($availablePOs as $poItem)
-                <option value="{{ $poItem->id }}" @selected($po && $po->id == $poItem->id)>{{ $poItem->po_number }} - {{ $poItem->supplier->name ?? '-' }}</option>
+                <option value="{{ $poItem->id }}" data-items="{{ json_encode($poItem->items) }}" @selected($po && $po->id == $poItem->id)>
+                    {{ $poItem->po_number }} - {{ $poItem->supplier->name ?? '-' }}
+                </option>
             @endforeach
         </select>
     </div>
@@ -67,6 +70,7 @@
 const products = @json($productsJson);
 const warehouses = @json($warehousesJson);
 const body = document.getElementById('grItemBody');
+let rowIndex = 0; // <-- Tambahkan variabel index
 
 function addGrRow(data = null) {
     const tr = document.createElement('tr');
@@ -74,23 +78,25 @@ function addGrRow(data = null) {
         ? (warehouses.find(w => w.is_default)?.id || warehouses[0].id)
         : '';
 
+    // Gunakan rowIndex untuk setiap name input
     tr.innerHTML = `
         <td>
-            <select name="items[][product_id]" class="ln-select ln-input-sm" onchange="onProdGr(this)">
+            <select name="items[${rowIndex}][product_id]" class="ln-select ln-input-sm" onchange="onProdGr(this)">
                 <option value="">- Non Produk -</option>
                 ${products.map(p => `<option value="${p.id}" data-cost="${p.cost_price}" ${data && data.product_id == p.id ? 'selected' : ''}>${p.code} - ${p.name}</option>`).join('')}
             </select>
         </td>
-        <td><input type="text" name="items[][description]" value="${data ? data.description : ''}" required class="ln-input ln-input-sm"></td>
+        <td><input type="text" name="items[${rowIndex}][description]" value="${data ? data.description : ''}" required class="ln-input ln-input-sm desc"></td>
         <td>
-            <select name="items[][warehouse_id]" class="ln-select ln-input-sm">
+            <select name="items[${rowIndex}][warehouse_id]" class="ln-select ln-input-sm">
                 ${warehouses.map(w => `<option value="${w.id}" ${w.id == defaultWarehouseId ? 'selected' : ''}>${w.name}</option>`).join('')}
             </select>
         </td>
-        <td><input type="number" name="items[][qty]" value="${data ? data.qty : 1}" min="0.01" step="0.01" class="ln-input ln-input-sm" style="text-align:right"></td>
-        <td><input type="number" name="items[][unit_cost]" value="${data ? data.unit_cost : 0}" min="0" step="0.01" class="ln-input ln-input-sm cost" style="text-align:right"></td>
+        <td><input type="number" name="items[${rowIndex}][qty]" value="${data ? data.qty : 1}" min="0.01" step="0.01" class="ln-input ln-input-sm" style="text-align:right"></td>
+        <td><input type="number" name="items[${rowIndex}][unit_cost]" value="${data ? data.unit_cost : 0}" min="0" step="0.01" class="ln-input ln-input-sm cost" style="text-align:right"></td>
         <td class="text-center"><button type="button" onclick="this.closest('tr').remove()" class="ln-remove-btn">✕</button></td>
     `;
+    rowIndex++; // <-- Increment index
     body.appendChild(tr);
 }
 
@@ -99,8 +105,39 @@ function onProdGr(sel) {
     const opt = sel.options[sel.selectedIndex];
     if (opt.dataset.cost) {
         tr.querySelector('.cost').value = opt.dataset.cost;
-        const desc = tr.querySelector('input[name="items[][description]"]');
+        const desc = tr.querySelector('.desc');
         if (!desc.value) desc.value = opt.text.split(' - ').slice(1).join(' - ');
+    }
+}
+
+// FUNGSI BARU: Saat PO dipilih, otomatis isi tabel
+function onPOChange(select) {
+    const opt = select.options[select.selectedIndex];
+    const poId = opt.value;
+
+    body.innerHTML = ''; // Bersihkan tabel
+    rowIndex = 0;
+
+    if (poId && opt.dataset.items) {
+        const items = JSON.parse(opt.dataset.items);
+        if (items.length > 0) {
+            items.forEach(item => {
+                // Hitung sisa qty (qty PO dikurangi yang sudah diterima)
+                let remaining = item.qty - (item.received_qty || 0);
+                if (remaining > 0) {
+                    addGrRow({
+                        product_id: item.product_id,
+                        description: item.description,
+                        qty: remaining,
+                        unit_cost: item.price
+                    });
+                }
+            });
+        } else {
+            addGrRow();
+        }
+    } else {
+        addGrRow();
     }
 }
 

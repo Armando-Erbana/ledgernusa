@@ -2,54 +2,30 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToCompany;
 
 class Journal extends Model
 {
+    use HasFactory, BelongsToCompany, Auditable;
+
     protected $fillable = [
-        'company_id',
-        'branch_id',
-        'date',
-        'currency',
-        'exchange_rate',
-        'reference',
-        'description',
-        'status',
-        'created_by',
-        'posted_by',
-        'posted_at',
+        'company_id', 'branch_id', 'date', 'reference', 'description', 'status',
+        'created_by', 'posted_by', 'posted_at',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'exchange_rate' => 'decimal:8',
         'posted_at' => 'datetime',
     ];
 
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
+    public function company() { return $this->belongsTo(Company::class); }
+    public function entries() { return $this->hasMany(JournalEntry::class); }
+    public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function poster() { return $this->belongsTo(User::class, 'posted_by'); }
 
-    public function entries(): HasMany
-    {
-        return $this->hasMany(JournalEntry::class);
-    }
-
-    public function getTotalDebitAttribute(): float
-    {
-        return (float) $this->entries->sum('debit');
-    }
-
-    public function getTotalCreditAttribute(): float
-    {
-        return (float) $this->entries->sum('credit');
-    }
-
-    public function getIsBalancedAttribute(): bool
-    {
-        return abs($this->total_debit - $this->total_credit) < 0.01;
-    }
+    public function totalDebit() { return $this->entries->sum('debit'); }
+    public function totalCredit() { return $this->entries->sum('credit'); }
 }

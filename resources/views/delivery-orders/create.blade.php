@@ -176,6 +176,7 @@
 const products = @json($productsJson);
 const warehouses = @json($warehousesJson);
 const body = document.getElementById('doItemBody');
+let rowIndex = 0; // <-- VARIABEL INDEX
 
 function addDoRow(data = null) {
     const tr = document.createElement('tr');
@@ -183,19 +184,27 @@ function addDoRow(data = null) {
         ? (warehouses.find(w => w.is_default)?.id || warehouses[0].id)
         : '';
 
+    // GUNAKAN rowIndex UNTUK SETIAP NAME INPUT
     tr.innerHTML = `
         <td>
-            <select name="items[][product_id]" class="dz-sel sm">
+            <select name="items[${rowIndex}][product_id]" class="dz-sel sm">
                 <option value="">- Non Produk -</option>
                 ${products.map(p => `<option value="${p.id}" ${data && data.product_id == p.id ? 'selected' : ''}>${p.code} - ${p.name}</option>`).join('')}
             </select>
-            <input type="hidden" name="items[][warehouse_id]" value="${defaultWarehouseId}">
+            <input type="hidden" name="items[${rowIndex}][warehouse_id]" value="${defaultWarehouseId}">
         </td>
-        <td><input type="text" name="items[][description]" value="${data ? data.description : ''}" required class="dz-in sm"></td>
-        <td><input type="number" name="items[][qty]" value="${data ? data.qty : 1}" min="0.01" step="0.01" class="dz-in sm r"></td>
+        <td><input type="text" name="items[${rowIndex}][description]" value="${data ? data.description : ''}" required class="dz-in sm desc"></td>
+        <td><input type="number" name="items[${rowIndex}][qty]" value="${data ? data.qty : 1}" min="0.01" step="0.01" class="dz-in sm r"></td>
         <td style="text-align:center;"><button type="button" onclick="this.closest('tr').remove()" class="dz-rm">✕</button></td>
     `;
+    rowIndex++; // <-- INCREMENT INDEX
     body.appendChild(tr);
+}
+
+// Fungsi ini bisa dikembangkan jika Anda ingin auto-fill item saat memilih SO
+function onSoChange(select) {
+    // Logika untuk mengambil item dari SO via AJAX bisa ditaruh di sini
+    // Untuk saat ini, biarkan kosong jika belum diimplementasikan
 }
 
 // Pre-fill dari SO jika ada

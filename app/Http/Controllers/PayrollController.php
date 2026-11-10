@@ -7,17 +7,19 @@ use App\Models\Employee;
 use App\Models\PayrollItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollController extends Controller
 {
     public function index()
     {
-        $isOwner = auth()->user()->roleInActiveCompany() !== 'staff';
+        $companyId = session('company_id');
         $branchId = session('branch_id');
+        $isStaff = auth()->user()->roleInActiveCompany() === 'staff';
 
-        $query = Payroll::where('company_id', session('company_id'));
+        $query = Payroll::where('company_id', $companyId);
 
-        if (!$isOwner) {
+        if ($isStaff) {
             $query->where('branch_id', $branchId);
         } elseif ($branchId) {
             $query->where('branch_id', $branchId);
@@ -29,12 +31,12 @@ class PayrollController extends Controller
 
     public function create()
     {
-        $isOwner = auth()->user()->roleInActiveCompany() !== 'staff';
+        $isStaff = auth()->user()->roleInActiveCompany() === 'staff';
         $branchId = session('branch_id');
 
         $query = Employee::where('company_id', session('company_id'))->where('is_active', true);
 
-        if (!$isOwner) {
+        if ($isStaff) {
             $query->where('branch_id', $branchId);
         } elseif ($branchId) {
             $query->where('branch_id', $branchId);
@@ -61,6 +63,16 @@ class PayrollController extends Controller
             'items.*.other_income' => 'nullable|numeric',
             'items.*.other_deduction' => 'nullable|numeric',
         ]);
+
+        // Pengecekan Duplikat Payroll
+        $existingPayroll = Payroll::where('company_id', session('company_id'))
+            ->where('period_month', $data['period_month'])
+            ->where('period_year', $data['period_year'])
+            ->first();
+
+        if ($existingPayroll) {
+            return back()->withInput()->with('error', 'Gagal! Payroll untuk periode bulan ini sudah pernah dibuat. Silakan hapus data payroll lama terlebih dahulu jika ingin membuat ulang.');
+        }
 
         try {
             DB::transaction(function () use ($data, $request) {
@@ -92,7 +104,6 @@ class PayrollController extends Controller
                     ];
                 }
 
-                // Handle branch_id untuk Konsolidasi
                 $branchId = session('branch_id');
                 if (!$branchId) {
                     $mainBranch = \App\Models\Branch::where('company_id', session('company_id'))->where('is_main', true)->first();
@@ -193,7 +204,18 @@ class PayrollController extends Controller
 
     public function slipGaji(Payroll $payroll, PayrollItem $item)
     {
-        abort_if(auth()->user()->roleInActiveCompany() === 'staff' && $payroll->branch_id !== session('branch_id'), 403);
-        return view('payrolls.slip', compact('payroll', 'item'));
+        // Pastikan item milik payroll yang benar
+        abort_if($item->payroll_id !== $payroll->id, 404);
+
+        $payroll->load('company');
+        $item->load('employee');
+
+        $pdf = Pdf::loadView('pdf.slip', compact('payroll', 'item'));
+        $pdf->setPaper('A4', 'portrait');
+
+        // Bersihkan nama karyawan dari karakter aneh untuk nama file
+        $safeName = preg_replace('/[^A-Za-z0-9\-]/', '', $item->employee->name ?? 'Karyawan');
+
+        return $pdf->download('Slip-Gaji-' . $safeName . '.pdf');
     }
 }

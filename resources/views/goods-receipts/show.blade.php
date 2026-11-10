@@ -19,7 +19,7 @@
 @if($gr->status === 'draft')
     <form method="POST" action="{{ route('goods-receipts.receive', $gr) }}" class="mb-4">
         @csrf
-        <button class="ln-btn-primary" onclick="return confirm('Tandai barang sudah diterima? Stok akan bertambah.')">📦 Tandai Diterima</button>
+        <button class="ln-btn-primary" onclick="return confirm('Tandai barang sudah diterima? Stok akan bertambah.')">Tandai Diterima</button>
     </form>
 @elseif($gr->status === 'received' && !$gr->bill_id)
     <form method="POST" action="{{ route('goods-receipts.create-bill', $gr) }}" class="mb-4">

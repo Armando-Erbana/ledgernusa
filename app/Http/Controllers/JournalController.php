@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Account;
@@ -26,7 +27,13 @@ class JournalController extends Controller
 
     public function store(Request $request)
     {
-        // PERBAIKAN: branch_id dihapus dari validate
+        // 1. BUANG BARIS KOSONG
+        $entries = array_filter($request->input('entries', []), function($entry) {
+            return !empty($entry['account_id']) || !empty($entry['debit']) || !empty($entry['credit']);
+        });
+        $request->merge(['entries' => array_values($entries)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'date' => 'required|date',
             'reference' => 'nullable|string',
@@ -35,19 +42,24 @@ class JournalController extends Controller
             'entries.*.account_id' => 'required|exists:accounts,id',
             'entries.*.debit' => 'nullable|numeric|min:0',
             'entries.*.credit' => 'nullable|numeric|min:0',
+        ], [
+            'entries.min' => 'Jurnal minimal harus memiliki 2 baris (Debit dan Kredit).',
+            'entries.*.account_id.required' => 'Akun pada baris transaksi belum dipilih.',
         ]);
 
+        // 3. VALIDASI BALANCE
         $totalDebit = collect($data['entries'])->sum('debit');
         $totalCredit = collect($data['entries'])->sum('credit');
 
         if (abs($totalDebit - $totalCredit) > 0.01) {
-            return back()->withInput()->withErrors(['balance' => 'Total debit & kredit harus sama.']);
+            return back()->withInput()->with('error', 'Total Debit dan Kredit tidak seimbang (Balance).');
         }
 
+        // 4. SIMPAN KE DATABASE
         DB::transaction(function () use ($data) {
             $journal = Journal::create([
                 'company_id' => session('company_id'),
-                'branch_id'  => session('branch_id'), // PERBAIKAN: Tambahkan branch_id
+                'branch_id'  => session('branch_id'),
                 'date' => $data['date'],
                 'reference' => $data['reference'] ?? null,
                 'description' => $data['description'] ?? null,
@@ -65,7 +77,7 @@ class JournalController extends Controller
             }
         });
 
-        return redirect()->route('journals.index')->with('success', 'Jurnal berhasil disimpan sebagai draft');
+        return redirect()->route('journals.index')->with('success', 'Jurnal berhasil disimpan sebagai draft.');
     }
 
     public function show(Journal $journal)
@@ -87,6 +99,13 @@ class JournalController extends Controller
     {
         if ($journal->status === 'posted') abort(403);
 
+        // 1. BUANG BARIS KOSONG SAAT EDIT
+        $entries = array_filter($request->input('entries', []), function($entry) {
+            return !empty($entry['account_id']) || !empty($entry['debit']) || !empty($entry['credit']);
+        });
+        $request->merge(['entries' => array_values($entries)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'date' => 'required|date',
             'reference' => 'nullable|string',
@@ -95,15 +114,20 @@ class JournalController extends Controller
             'entries.*.account_id' => 'required|exists:accounts,id',
             'entries.*.debit' => 'nullable|numeric|min:0',
             'entries.*.credit' => 'nullable|numeric|min:0',
+        ], [
+            'entries.min' => 'Jurnal minimal harus memiliki 2 baris (Debit dan Kredit).',
+            'entries.*.account_id.required' => 'Akun pada baris transaksi belum dipilih.',
         ]);
 
+        // 3. VALIDASI BALANCE
         $totalDebit = collect($data['entries'])->sum('debit');
         $totalCredit = collect($data['entries'])->sum('credit');
 
         if (abs($totalDebit - $totalCredit) > 0.01) {
-            return back()->withInput()->withErrors(['balance' => 'Total debit & kredit harus sama.']);
+            return back()->withInput()->with('error', 'Total Debit dan Kredit tidak seimbang (Balance).');
         }
 
+        // 4. UPDATE KE DATABASE
         DB::transaction(function () use ($journal, $data) {
             $journal->update([
                 'date' => $data['date'],
@@ -122,14 +146,19 @@ class JournalController extends Controller
             }
         });
 
-        return redirect()->route('journals.index')->with('success', 'Jurnal diperbarui');
+        return redirect()->route('journals.index')->with('success', 'Jurnal diperbarui.');
     }
 
     public function destroy(Journal $journal)
     {
         if ($journal->status === 'posted') abort(403);
-        $journal->delete();
-        return redirect()->route('journals.index')->with('success', 'Jurnal dihapus');
+        
+        DB::transaction(function () use ($journal) {
+            $journal->entries()->delete();
+            $journal->delete();
+        });
+        
+        return redirect()->route('journals.index')->with('success', 'Jurnal dihapus.');
     }
 
     public function post(Journal $journal)

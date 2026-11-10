@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf; 
 
 class SaleController extends Controller
 {
@@ -32,7 +33,13 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-        // PERBAIKAN: branch_id dihapus dari validate
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['account_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'invoice_number' => 'required|string|max:50',
             'customer_id' => 'nullable|exists:customers,id',
@@ -50,6 +57,12 @@ class SaleController extends Controller
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dijual.',
+            'items.*.account_id.required' => 'Akun pendapatan pada baris item belum dipilih.',
+            'items.*.description.required' => 'Deskripsi barang pada baris item belum diisi.',
+            'items.*.qty.required' => 'Qty pada baris item belum diisi.',
+            'items.*.price.required' => 'Harga pada baris item belum diisi.',
         ]);
 
         $subtotal = 0;
@@ -63,7 +76,7 @@ class SaleController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $sale = Sale::create([
                 'company_id' => session('company_id'),
-                'branch_id'  => session('branch_id'), // PERBAIKAN: Tambahkan branch_id
+                'branch_id'  => session('branch_id'),
                 'invoice_number' => $data['invoice_number'],
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -126,7 +139,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale)
     {
-        $sale->load(['customer', 'items.account', 'items.product', 'payments.cashAccount', 'journal.entries.account']);
+        $sale->load(['customer', 'items.account', 'items.product', 'payments.cashAccount', 'journal.entries.account', 'company']);
         return view('sales.show', compact('sale'));
     }
 
@@ -143,6 +156,13 @@ class SaleController extends Controller
     {
         if ($sale->status === 'paid') abort(403);
 
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['account_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'date' => 'required|date',
@@ -158,6 +178,8 @@ class SaleController extends Controller
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dijual.',
         ]);
 
         $subtotal = 0;
@@ -293,5 +315,20 @@ class SaleController extends Controller
         });
 
         return redirect()->route('sales.index')->with('success', 'Invoice dihapus.');
+    } // <-- Tambahkan kurung kurawal penutup destroy yang sempat hilang di sini
+
+    public function exportPdf(Sale $sale)
+    {
+        // Ambil data relasi yang dibutuhkan
+        $sale->load(['customer', 'items.account', 'items.product', 'company']);
+
+        // Load view khusus PDF dan passing data sale
+        $pdf = Pdf::loadView('pdf.invoice', compact('sale'));
+
+        // Atur ukuran kertas (A4) dan orientasi (Portrait)
+        $pdf->setPaper('A4', 'portrait');
+
+        // Download file dengan nama Invoice-INV-xxxx.pdf
+        return $pdf->download('Invoice-' . $sale->invoice_number . '.pdf');
     }
 }

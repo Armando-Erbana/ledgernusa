@@ -36,6 +36,13 @@ class DeliveryOrderController extends Controller
 
     public function store(Request $request)
     {
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'do_number' => 'required|string|max:50|unique:delivery_orders,do_number',
             'sales_order_id' => 'nullable|exists:sales_orders,id',
@@ -50,6 +57,10 @@ class DeliveryOrderController extends Controller
             'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
             'items.*.description' => 'required|string|max:255',
             'items.*.qty' => 'required|numeric|min:0.01',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dikirim.',
+            'items.*.description.required' => 'Deskripsi barang pada baris item belum diisi.',
+            'items.*.qty.required' => 'Qty pada baris item belum diisi.',
         ]);
 
         DB::transaction(function () use ($data) {
@@ -57,6 +68,7 @@ class DeliveryOrderController extends Controller
 
             $do = DeliveryOrder::create([
                 'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'), // <-- Tambahkan branch_id
                 'sales_order_id' => $data['sales_order_id'] ?? null,
                 'do_number' => $data['do_number'],
                 'customer_id' => $so?->customer_id,
@@ -96,16 +108,12 @@ class DeliveryOrderController extends Controller
         return redirect()->route('delivery-orders.index')->with('success', 'DO dihapus.');
     }
 
-    /**
-     * Tandai DO sudah dikirim → kurangi stok, update SO delivered_qty.
-     */
     public function deliver(DeliveryOrder $deliveryOrder, StockService $stockService)
     {
         if ($deliveryOrder->status === 'delivered') return back()->with('error', 'DO sudah dikirim.');
 
         DB::transaction(function () use ($deliveryOrder, $stockService) {
             foreach ($deliveryOrder->items as $item) {
-                // Kurangi stok
                 if ($item->product_id && $item->warehouse_id) {
                     $product = Product::find($item->product_id);
                     if ($product && $product->track_stock) {
@@ -120,7 +128,6 @@ class DeliveryOrderController extends Controller
                     }
                 }
 
-                // Update delivered_qty di SO item
                 if ($item->sales_order_item_id) {
                     $soItem = \App\Models\SalesOrderItem::find($item->sales_order_item_id);
                     if ($soItem) {
@@ -135,7 +142,6 @@ class DeliveryOrderController extends Controller
                 'delivered_at' => now(),
             ]);
 
-            // Update status SO
             if ($deliveryOrder->salesOrder) {
                 $so = $deliveryOrder->salesOrder->fresh();
                 $so->update(['status' => $so->isFullyDelivered() ? 'delivered' : 'partial_delivered']);
@@ -145,9 +151,6 @@ class DeliveryOrderController extends Controller
         return back()->with('success', 'DO berhasil dikirim, stok berkurang.');
     }
 
-    /**
-     * Buat Invoice dari DO.
-     */
     public function createInvoice(DeliveryOrder $deliveryOrder)
     {
         if ($deliveryOrder->status !== 'delivered') {
@@ -156,20 +159,6 @@ class DeliveryOrderController extends Controller
 
         $so = $deliveryOrder->salesOrder;
         if (!$so) return back()->with('error', 'DO tidak terkait dengan SO.');
-
-        // Buat invoice dari item DO (harga dari SO item)
-        $items = $deliveryOrder->items->map(function ($doItem) {
-            $soItem = $doItem->sales_order_item_id ? \App\Models\SalesOrderItem::find($doItem->sales_order_item_id) : null;
-            return [
-                'product_id' => $doItem->product_id,
-                'warehouse_id' => $doItem->warehouse_id,
-                'account_id' => $soItem?->account_id,
-                'description' => $doItem->description,
-                'qty' => $doItem->qty,
-                'price' => $soItem?->price ?? 0,
-                'discount' => 0,
-            ];
-        })->toArray();
 
         return redirect()->route('sales.create', ['from_do' => $deliveryOrder->id]);
     }

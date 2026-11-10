@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\GoodsReceipt;
@@ -23,8 +24,9 @@ class GoodsReceiptController extends Controller
         $poId = $request->get('po');
         $po = $poId ? PurchaseOrder::with('items.product', 'supplier')->findOrFail($poId) : null;
 
+        // Tambahkan with('items') agar data item PO bisa dibaca oleh JavaScript di view
         $availablePOs = PurchaseOrder::whereIn('status', ['confirmed', 'partial_received'])
-            ->with('supplier')
+            ->with(['supplier', 'items'])
             ->orderBy('date', 'desc')
             ->get();
 
@@ -35,6 +37,13 @@ class GoodsReceiptController extends Controller
 
     public function store(Request $request)
     {
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'gr_number' => 'required|string|max:50|unique:goods_receipts,gr_number',
             'purchase_order_id' => 'nullable|exists:purchase_orders,id',
@@ -48,6 +57,10 @@ class GoodsReceiptController extends Controller
             'items.*.description' => 'required|string|max:255',
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang diterima.',
+            'items.*.description.required' => 'Deskripsi barang belum diisi.',
+            'items.*.qty.required' => 'Qty barang belum diisi.',
         ]);
 
         DB::transaction(function () use ($data) {
@@ -55,6 +68,7 @@ class GoodsReceiptController extends Controller
 
             $gr = GoodsReceipt::create([
                 'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'), // <-- Tambahkan branch_id
                 'purchase_order_id' => $data['purchase_order_id'] ?? null,
                 'gr_number' => $data['gr_number'],
                 'supplier_id' => $po?->supplier_id,

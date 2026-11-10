@@ -9,9 +9,10 @@
         ?: 'LedgerNusa adalah aplikasi akuntansi online untuk jurnal, buku besar, kas & bank, penjualan, pembelian, persediaan, dan laporan keuangan usaha Anda.';
     $lnRobots    = trim($__env->yieldContent('robots')) ?: 'noindex, nofollow';
 
-    /* ---------- 2. Cek Status Langganan & Multi-Cabang ---------- */
+    /* ---------- 2. Cek Status Langganan & Role User ---------- */
     $activeCompany = auth()->user()->activeCompany();
     $companyId = session('company_id');
+    $userRole = auth()->user()->roleInActiveCompany(); // owner, admin, staff
     
     $activeSub = \App\Models\Subscription::where('company_id', $companyId)
         ->where(function($q) {
@@ -42,9 +43,10 @@
 
     $isPro = $isTrial || in_array($currentPlanCode, ['pro', 'enterprise']);
     
-    // LOGIKA MULTI-CABANG
-    $userRole = auth()->user()->roleInActiveCompany();
+    // LOGIKA MULTI-CABANG & ROLE
     $isStaff = $userRole === 'staff';
+    $isOwner = $userRole === 'owner';
+    $isAdmin = $userRole === 'admin';
 
     if ($isPro) {
         if ($isStaff) {
@@ -63,55 +65,57 @@
     $showBranchDropdown = $isPro && ($branches->count() > 1 || !$isStaff);
 
     /* ---------- 3. Menu utama (dock bawah) ---------- */
-    $navMain = [
+    $navMain = array_filter([
         ['Dashboard', 'dashboard',          'dashboard',      '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/>'],
         ['Kas',       'cash.index',         'cash.*',         '<rect x="2.5" y="6.5" width="19" height="12" rx="2"/><circle cx="12" cy="12.5" r="2.4"/>'],
         ['Penjualan', 'sales.index',        'sales.*',        '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'],
-        ['Langganan', 'subscription.index', 'subscription.*', '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>'],
-        ['Jurnal',    'journals.index',     'journals.*',     '<path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/>'],
-        ['Laporan',   'reports.index',      'reports.*',      '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'],
-    ];
+        $isOwner ? ['Langganan', 'subscription.index', 'subscription.*', '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>'] : null,
+        !$isStaff ? ['Jurnal',    'journals.index',     'journals.*',     '<path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M9 9h7M9 12.5h7"/>'] : null,
+        !$isStaff ? ['Laporan',   'reports.index',      'reports.*',      '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'] : null,
+    ]);
 
-    /* ---------- 4. Menu "Lainnya" ---------- */
+    /* ---------- 4. Menu "Lainnya" (Role & Plan Filtering) ---------- */
     $lnMore = [
         'Kas & Bank' => array_filter([
             ['Kas & Bank',      'cash.index',                    'cash.*'],
-            $isPro ? ['Rekonsiliasi', 'bank-rec.index',          'bank-rec.*'] : null,
+            $isPro && !$isStaff ? ['Rekonsiliasi', 'bank-rec.index', 'bank-rec.*'] : null,
             ['Transfer',        'transfers.index',               'transfers.*'],
         ]),
         'Penjualan' => array_filter([
-            $isPro ? ['Sales Order', 'sales-orders.index',       'sales-orders.*'] : null,
-            $isPro ? ['Delivery',    'delivery-orders.index',    'delivery-orders.*'] : null,
+            $isPro && !$isStaff ? ['Sales Order', 'sales-orders.index', 'sales-orders.*'] : null,
+            $isPro && !$isStaff ? ['Delivery',    'delivery-orders.index', 'delivery-orders.*'] : null,
             ['Penjualan',       'sales.index',                   'sales.*'],
             ['Customer',        'customers.index',               'customers.*'],
         ]),
         'Pembelian' => array_filter([
-            $isPro ? ['Purchase Order', 'purchase-orders.index', 'purchase-orders.*'] : null,
-            $isPro ? ['Penerimaan',     'goods-receipts.index',  'goods-receipts.*'] : null,
+            $isPro && !$isStaff ? ['Purchase Order', 'purchase-orders.index', 'purchase-orders.*'] : null,
+            $isPro && !$isStaff ? ['Penerimaan',     'goods-receipts.index',  'goods-receipts.*'] : null,
             ['Pembelian',       'purchases.index',               'purchases.*'],
             ['Supplier',        'suppliers.index',               'suppliers.*'],
         ]),
         'Persediaan' => array_filter([
             ['Produk',          'products.index',                'products.*'],
-            $isPro ? ['Mutasi Stok', 'stock.index',              'stock.*'] : null,
-            $isPro ? ['Gudang',      'warehouses.index',         'warehouses.*'] : null,
+            $isPro && !$isStaff ? ['Mutasi Stok', 'stock.index', 'stock.*'] : null,
+            $isPro && !$isStaff ? ['Gudang',      'warehouses.index', 'warehouses.*'] : null,
             ['Kategori',        'product-categories.index',      'product-categories.*'],
         ]),
         'Akuntansi' => array_filter([
-            ['Akun (COA)',      'accounts.index',                'accounts.*'],
-            $isPro ? ['Aset Tetap', 'fixed-assets.index',        'fixed-assets.*'] : null,
-            $isPro ? ['Pajak',      'tax.index',                 'tax.*'] : null,
+            !$isStaff ? ['Akun (COA)',  'accounts.index',        'accounts.*'] : null,
+            $isPro && !$isStaff ? ['Aset Tetap', 'fixed-assets.index', 'fixed-assets.*'] : null,
+            $isPro && !$isStaff ? ['Pajak',      'tax.index',    'tax.*'] : null,
             ['Kontak',          'contacts.index',                'contacts.*'],
-            $isPro ? ['Karyawan',   'employees.index',           'employees.*'] : null,
-            $isPro ? ['Payroll',    'payrolls.index',            'payrolls.*'] : null,
+            $isPro && !$isStaff ? ['Karyawan',   'employees.index', 'employees.*'] : null,
+            $isPro && !$isStaff ? ['Payroll',    'payrolls.index', 'payrolls.*'] : null,
+            $isPro && !$isStaff ? ['Budgeting',  'budgets.report', 'budgets.*'] : null,
         ]),
         'Sistem' => array_filter([
-            ['Undang User',     'invitations.index',             'invitations.*'],
-            ['Setting',         'companies.index',               'companies.*'],
+            ($isOwner || $isAdmin) ? ['Kelola User', 'users.index', 'users.*'] : null,
+            ($isOwner || $isAdmin) ? ['Setting',     'companies.index',   'companies.*'] : null,
+            ['Panduan',         'help.index',                    'help.*'],
             ['Profil',          'profile.edit',                  'profile.*'],
-            $isPro ? ['Currencies', 'settings.currencies.index', 'settings.currencies.*'] : null,
-            $isPro ? ['Kurs',       'settings.exchange-rates.index', 'settings.exchange-rates.*'] : null,
-            $isPro ? ['Multi-Cabang', 'branches.index',          'branches.*'] : null,
+            $isPro && !$isStaff ? ['Currencies', 'settings.currencies.index', 'settings.currencies.*'] : null,
+            $isPro && !$isStaff ? ['Kurs',       'settings.exchange-rates.index', 'settings.exchange-rates.*'] : null,
+            $isPro && !$isStaff ? ['Multi-Cabang', 'branches.index', 'branches.*'] : null,
         ]),
     ];
 
@@ -163,9 +167,6 @@
             --shadow-l: 0 24px 70px -20px rgba(0,0,0,.38);
             --ok: #2E9E6B; --warn: #C98A1B; --bad: #D04A4A;
             --dock-h: 62px; --dock-gap: 14px;
-            --ln-navy: #1D1D1F; --ln-navy-deep: #000; --ln-cyan: #2C2C2E; --ln-cyan-bright: #6E6E73; --ln-brass: #8E8E93;
-            --ln-paper: #ECECEF; --ln-line: var(--hair); --ln-ink-soft: var(--mute); --ln-ink-faint: var(--faint);
-            --ln-shadow-sm: var(--shadow-s); --ln-shadow-md: var(--shadow-m); --ln-shadow-lg: var(--shadow-l);
         }
         * { box-sizing: border-box; }
         html { -webkit-text-size-adjust: 100%; scroll-padding-top: 90px; }
@@ -251,11 +252,6 @@
         .ln-branch-item.active { background: rgba(37,99,235,0.08); color: #2563EB; font-weight: 600; }
         .ln-branch-divider { height: 1px; background: var(--hair); margin: 4px 8px; }
 
-        .ln-trial { max-width: 1152px; margin: 12px auto 0; padding: 0 16px; }
-        .ln-trial > div { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; text-align: center; padding: 11px 16px; border-radius: 14px; font-size: 13px; color: var(--soft); }
-        .ln-trial strong { color: var(--ink); }
-        .ln-trial a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-
         .ln-banner-expired { max-width: 1152px; margin: 12px auto 0; padding: 0 16px; }
         .ln-banner-expired > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; font-size: 13.5px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; box-shadow: 0 4px 12px -4px rgba(185, 28, 28, 0.15); }
         .ln-banner-expired a { font-weight: 600; text-decoration: underline; color: #991B1B; }
@@ -272,40 +268,11 @@
         .ln-alert-error { --dot: var(--bad); }
         .ln-alert ul { margin: 0; padding-left: 16px; }
 
-        /* ===== Custom Popup Alert ===== */
-        .ln-popup-container {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-        .ln-popup {
-            min-width: 320px;
-            max-width: 90vw;
-            padding: 14px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #fff;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            pointer-events: auto;
-            animation: popupSlideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
+        .ln-popup-container { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .ln-popup { min-width: 320px; max-width: 90vw; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #fff; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; pointer-events: auto; animation: popupSlideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .ln-popup-error { background: linear-gradient(135deg, #ef4444, #b91c1c); }
         .ln-popup-success { background: linear-gradient(135deg, #10b981, #047857); }
-        
-        @keyframes popupSlideDown {
-            from { opacity: 0; transform: translateY(-40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes popupSlideDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
 
         main { animation: ln-rise .35s ease both; }
         @keyframes ln-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -383,7 +350,6 @@
             .ln-sheet-foot { padding: 14px 24px; }
         }
 
-        /* ===== Komponen konten ===== */
         .ln-page-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
         .ln-page-title { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.022em; color: var(--ink); }
         .ln-page-sub { font-size: 13.5px; color: var(--mute); margin-top: 4px; }
@@ -463,7 +429,6 @@
         .ln-balance-ok { font-size: 13px; font-weight: 600; color: #1E7A4C; }
         .ln-balance-bad { font-size: 13px; font-weight: 600; color: #B5362F; }
 
-        /* ===== Asisten AI ===== */
         .ln-ai-fab { position: fixed; z-index: 90; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 14px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 0; cursor: pointer; color: #fff; background: linear-gradient(180deg, #2563EB, #1E3A8A); box-shadow: 0 12px 26px -8px rgba(37,99,235,.5), inset 0 1px 0 rgba(255,255,255,.2); transition: transform .18s; }
         .ln-ai-fab:hover { transform: translateY(-2px) scale(1.04); }
         .ln-ai-fab:active { transform: scale(.96); }
@@ -547,7 +512,7 @@
                 <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">{{ $activeCompany->name }}</a>
             @endif
 
-            {{-- Dropdown Cabang (FASE 2) --}}
+            {{-- Dropdown Cabang --}}
             @if($showBranchDropdown)
                 <div class="ln-branch-wrap" id="branchDropdown">
                     <button class="ln-branch-btn" onclick="document.getElementById('branchDropdown').classList.toggle('is-open')">
@@ -556,7 +521,6 @@
                     </button>
                     <div class="ln-branch-menu">
                         @if(!$isStaff)
-                            {{-- Opsi Konsolidasi hanya untuk Owner/Admin --}}
                             <a href="{{ route('branches.switch', 0) }}" class="ln-branch-item {{ !session('branch_id') ? 'active' : '' }}">
                                 <span>Semua Cabang (Konsolidasi)</span>
                             </a>
@@ -581,7 +545,6 @@
                     </div>
                 </div>
             @elseif($isPro && $branches->count() === 1)
-                {{-- Jika Staff hanya punya 1 cabang, tampilkan teks statis --}}
                 <div class="ln-branch-btn" style="cursor: default; background: transparent; border: none; color: var(--soft);">
                     <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     {{ $branches->first()->name }}
@@ -616,7 +579,7 @@
     </div>
 @endif
 
-{{-- POPUP ALERT CONTAINER --}}
+{{-- POPUP ALERT CONTAINER (Hanya Ada Satu) --}}
 <div class="ln-popup-container" id="popupContainer">
     @if(session('success'))
         <div class="ln-popup ln-popup-success">
@@ -630,17 +593,22 @@
             {{ session('error') }}
         </div>
     @endif
+    @if($errors->any())
+        <div class="ln-popup ln-popup-error" style="align-items: flex-start;">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-top: 2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                <strong style="display: block; margin-bottom: 4px;">Terjadi Kesalahan:</strong>
+                <ul style="margin: 0; padding-left: 16px; font-size: 13px; font-weight: normal;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
 </div>
 
 <main id="konten" class="ln-main max-w-6xl mx-auto px-4 py-6">
-    @if($errors->any())
-        <div class="ln-alert ln-alert-error mb-4" role="alert">
-            <ul>
-                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
-            </ul>
-        </div>
-    @endif
-
     @yield('content')
 </main>
 

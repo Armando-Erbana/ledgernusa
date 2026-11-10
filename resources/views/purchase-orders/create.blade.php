@@ -193,23 +193,26 @@
 <script>
 const products = @json($productsJson);
 const body = document.getElementById('itemBody');
+let rowIndex = 0; // Variabel untuk indeks unik setiap baris
 
 function addRow() {
     const tr = document.createElement('tr');
+    // Gunakan rowIndex pada setiap name input
     tr.innerHTML = `
         <td>
-            <select name="items[][product_id]" class="dz-sel sm" onchange="onProd(this)">
+            <select name="items[${rowIndex}][product_id]" class="dz-sel sm" onchange="onProd(this)">
                 <option value="">- Non Produk -</option>
                 ${products.map(p => `<option value="${p.id}" data-price="${p.cost_price}">${p.code} - ${p.name}</option>`).join('')}
             </select>
         </td>
-        <td><input type="text" name="items[][description]" required class="dz-in sm"></td>
-        <td><input type="number" name="items[][qty]" value="1" min="0.01" step="0.01" class="dz-in sm r qty" oninput="calc()"></td>
-        <td><input type="number" name="items[][price]" value="0" min="0" step="0.01" class="dz-in sm r price" oninput="calc()"></td>
-        <td><input type="number" name="items[][discount]" value="0" min="0" step="0.01" class="dz-in sm r disc" oninput="calc()"></td>
+        <td><input type="text" name="items[${rowIndex}][description]" required class="dz-in sm desc"></td>
+        <td><input type="number" name="items[${rowIndex}][qty]" value="1" min="0.01" step="0.01" class="dz-in sm r qty" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][price]" value="0" min="0" step="0.01" class="dz-in sm r price" oninput="calc()"></td>
+        <td><input type="number" name="items[${rowIndex}][discount]" value="0" min="0" step="0.01" class="dz-in sm r disc" oninput="calc()"></td>
         <td class="subtotal">0</td>
         <td style="text-align:center;"><button type="button" onclick="this.closest('tr').remove(); calc()" class="dz-rm">✕</button></td>
     `;
+    rowIndex++; // Tambah index untuk baris berikutnya
     body.appendChild(tr);
     calc();
 }
@@ -219,7 +222,8 @@ function onProd(sel) {
     const opt = sel.options[sel.selectedIndex];
     if (opt.dataset.price) {
         tr.querySelector('.price').value = opt.dataset.price;
-        const desc = tr.querySelector('input[name="items[][description]"]');
+        // Gunakan class .desc alih-alih name yang dinamis
+        const desc = tr.querySelector('.desc');
         if (!desc.value) desc.value = opt.text.split(' - ').slice(1).join(' - ');
         calc();
     }

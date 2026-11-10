@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Account;
@@ -30,6 +31,13 @@ class SalesOrderController extends Controller
 
     public function store(Request $request)
     {
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'so_number' => 'required|string|max:50|unique:sales_orders,so_number',
             'customer_id' => 'nullable|exists:customers,id',
@@ -46,6 +54,11 @@ class SalesOrderController extends Controller
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dipesan.',
+            'items.*.description.required' => 'Deskripsi barang pada baris item belum diisi.',
+            'items.*.qty.required' => 'Qty pada baris item belum diisi.',
+            'items.*.price.required' => 'Harga pada baris item belum diisi.',
         ]);
 
         $subtotal = 0;
@@ -57,6 +70,7 @@ class SalesOrderController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $so = SalesOrder::create([
                 'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'), // <-- Pastikan branch_id masuk
                 'so_number' => $data['so_number'],
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -107,6 +121,13 @@ class SalesOrderController extends Controller
     {
         if ($salesOrder->status !== 'draft') abort(403);
 
+        // 1. BUANG BARIS KOSONG
+        $items = array_filter($request->input('items', []), function($item) {
+            return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
+        });
+        $request->merge(['items' => array_values($items)]);
+
+        // 2. VALIDASI
         $data = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'date' => 'required|date',
@@ -119,6 +140,8 @@ class SalesOrderController extends Controller
             'items.*.qty' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
+        ], [
+            'items.min' => 'Minimal harus ada 1 barang yang dipesan.',
         ]);
 
         $subtotal = 0;

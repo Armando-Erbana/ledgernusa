@@ -8,6 +8,9 @@
         <p class="ln-page-sub">{{ $purchase->supplier->name ?? 'Tanpa supplier' }} · {{ $purchase->date->format('d M Y') }}</p>
     </div>
     <a href="{{ route('purchases.index') }}" class="ln-action">← Kembali</a>
+    <a href="{{ route('purchases.pdf', $purchase) }}" class="ln-btn-outline">
+    Cetak PDF
+</a>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
