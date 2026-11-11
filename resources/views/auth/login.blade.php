@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* Mencegah elemen melebar keluar layar */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         html, body { height: 100%; margin: 0; }
         body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         .ln-display { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; }
@@ -118,7 +123,18 @@
             align-items: center;
             justify-content: center;
             padding: 40px 24px;
+            width: 100%;
         }
+
+        /* Perbaikan untuk Mobile: Agar bisa di-scroll jika layar pendek */
+        @media (max-width: 1023px) {
+            .ln-form-col {
+                align-items: flex-start;
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
+        }
+
         .ln-form-inner { width: 100%; max-width: 380px; }
 
         .ln-mobile-mark { display: flex; justify-content: center; margin-bottom: 28px; }
@@ -130,6 +146,8 @@
 
         .ln-field { margin-top: 26px; }
         .ln-field label { display: block; font-size: 12.5px; color: #5B6577; margin-bottom: 8px; }
+        
+        /* Memperbaiki input agar tidak over-width */
         .ln-field input {
             width: 100%;
             border: none;
@@ -158,20 +176,24 @@
             letter-spacing: 0.01em;
             border-radius: 8px;
             border: none;
+            cursor: pointer;
             transition: background 0.15s ease;
         }
         .ln-submit:hover { background: #1C8FC4; }
         .ln-submit:focus-visible { outline: 2px solid #1C8FC4; outline-offset: 2px; }
 
-        .ln-forgot { display: block; text-align: center; margin-top: 18px; font-size: 13px; color: #8B96A9; }
+        .ln-forgot { display: block; text-align: center; margin-top: 18px; font-size: 13px; color: #8B96A9; text-decoration: none; }
         .ln-forgot:hover { color: #14213A; }
 
         .ln-divider { display: flex; align-items: center; gap: 14px; margin-top: 30px; }
         .ln-divider .line { flex: 1; height: 1px; background: #E4E7ED; }
         .ln-divider span { font-size: 12.5px; color: #9AA3B2; }
 
+        /* Perbaikan Tombol Daftar: Menggunakan Flex agar tidak kepanjangan */
         .ln-register {
-            display: block;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             width: 100%;
             margin-top: 20px;
             padding: 12px 20px;
@@ -182,11 +204,12 @@
             font-weight: 500;
             border-radius: 8px;
             border: 1.5px solid #14213A;
+            text-decoration: none;
             transition: all 0.15s ease;
         }
         .ln-register:hover { background: #14213A; color: #F7F7F5; }
 
-        .ln-status { font-size: 13.5px; color: #1E5B3D; background: #F2FAF6; border-left: 3px solid #2FA36B; padding: 8px 12px; border-radius: 6px; }
+        .ln-status { font-size: 13.5px; color: #1E5B3D; background: #F2FAF6; border-left: 3px solid #2FA36B; padding: 8px 12px; border-radius: 6px; margin-top: 16px; }
     </style>
 </head>
 <body>
@@ -243,7 +266,7 @@
                 <h1 class="ln-display ln-h1">Masuk ke akun Anda</h1>
 
                 @if (session('status'))
-                    <div class="ln-status mt-4">{{ session('status') }}</div>
+                    <div class="ln-status">{{ session('status') }}</div>
                 @endif
 
                 <form method="POST" action="{{ route('login') }}">
@@ -251,14 +274,15 @@
 
                     <div class="ln-field">
                         <label for="email">Email</label>
-                        <x-text-input id="email" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                        {{-- Ganti x-text-input dengan input biasa agar styling rapi --}}
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" />
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" style="color:#D04A4A; font-size:12px; margin-top:4px;" />
                     </div>
 
                     <div class="ln-field">
                         <label for="password">Password</label>
-                        <x-text-input id="password" type="password" name="password" required autocomplete="current-password" />
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                        <input id="password" type="password" name="password" required autocomplete="current-password" />
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" style="color:#D04A4A; font-size:12px; margin-top:4px;" />
                     </div>
 
                     <label class="ln-remember">

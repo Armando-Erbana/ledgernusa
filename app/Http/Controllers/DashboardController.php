@@ -17,50 +17,36 @@ class DashboardController extends Controller
     {
         $companyId = session('company_id');
         $isConsolidated = $this->branchScope->isConsolidated();
-        $branchKey = $isConsolidated ? 'all' : (string) $this->branchScope->currentBranchId();
+        $branchKey = $isConsolidated ? 'all' : (string) session('branch_id');
 
         if (! $companyId) {
             return view('dashboard', [
-                'totalKas' => 0,
-                'totalBank' => 0,
-                'totalJournal' => 0,
-                'recentJournals' => collect(),
-                'chartData' => collect(),
+                'totalKas' => 0, 'totalBank' => 0, 'totalJournal' => 0, 'totalAkun' => 0,
+                'recentJournals' => collect(), 'chartData' => collect(),
                 'isConsolidated' => false,
             ]);
         }
 
-        $cacheKey = "dashboard.v2.{$companyId}.{$branchKey}";
+        // Simpan ke Cache selama 3 menit
+        $cacheKey = "dashboard.v4.{$companyId}.{$branchKey}";
 
         $data = Cache::remember($cacheKey, now()->addMinutes(3), function () use ($companyId) {
             return [
-                'totalKas' => $this->scopedBalance($companyId, 'is_cash'),
-                'totalBank' => $this->scopedBalance($companyId, 'is_bank'),
-                'totalJournal' => $this->branchScope
-                    ->apply(
-                        Journal::where('company_id', $companyId)
-                            ->whereMonth('date', now()->month)
-                            ->whereYear('date', now()->year)
-                    )->count(),
-                'chartData' => $this->branchScope
-                    ->apply(
-                        Sale::where('company_id', $companyId)
-                            ->where('date', '>=', now()->subDays(6)->startOfDay())
-                    )
-                    ->selectRaw('DATE(date) as d, SUM(total) as total')
-                    ->groupBy('d')
-                    ->orderBy('d')
-                    ->get(),
+                'totalKas' => $this->getBalance($companyId, 'is_cash'),
+                'totalBank' => $this->getBalance($companyId, 'is_bank'),
+                'totalJournal' => $this->branchScope->apply(
+                    Journal::where('company_id', $companyId)->where('status', 'posted')
+                )->count(),
+                'totalAkun' => Account::where('company_id', $companyId)->count(),
+                'chartData' => $this->branchScope->apply(
+                    Sale::where('company_id', $companyId)->where('date', '>=', now()->subDays(6)->startOfDay())
+                )->selectRaw('DATE(date) as d, SUM(total) as total')->groupBy('d')->orderBy('d')->get(),
             ];
         });
 
-        $recentJournals = $this->branchScope
-            ->apply(Journal::where('company_id', $companyId))
-            ->with('creator')
-            ->latest('date')
-            ->latest('id')
-            ->limit(5)
-            ->get();
+        // Jurnal terbaru tidak di-cache
+        $recentJournals = $this->branchScope->apply(Journal::where('company_id', $companyId))
+            ->with('creator')->latest('date')->latest('id')->limit(5)->get();
 
         return view('dashboard', array_merge($data, [
             'recentJournals' => $recentJournals,
@@ -68,15 +54,10 @@ class DashboardController extends Controller
         ]));
     }
 
-    private function scopedBalance(int $companyId, string $flag): float
+    private function getBalance(int $companyId, string $flag): float
     {
-        $accountIds = Account::where('company_id', $companyId)
-            ->where($flag, true)
-            ->pluck('id');
-
-        if ($accountIds->isEmpty()) {
-            return 0.0;
-        }
+        $accountIds = Account::where('company_id', $companyId)->where($flag, true)->pluck('id');
+        if ($accountIds->isEmpty()) return 0.0;
 
         $query = JournalEntry::query()
             ->join('journals', 'journals.id', '=', 'journal_entries.journal_id')
@@ -85,16 +66,8 @@ class DashboardController extends Controller
             ->where('journals.company_id', $companyId)
             ->where('journals.status', 'posted');
 
-        if (! $this->branchScope->isConsolidated()) {
-            $query->where('journals.branch_id', $this->branchScope->currentBranchId());
-        }
+        $query = $this->branchScope->apply($query, 'journals.branch_id');
 
-        return (float) ($query
-            ->selectRaw(
-                'SUM(CASE WHEN accounts.normal_balance = "debit"
-                     THEN journal_entries.debit - journal_entries.credit
-                     ELSE journal_entries.credit - journal_entries.debit END) AS bal'
-            )
-            ->value('bal') ?? 0.0);
+        return (float) ($query->selectRaw('SUM(CASE WHEN accounts.normal_balance = "debit" THEN journal_entries.debit - journal_entries.credit ELSE journal_entries.credit - journal_entries.debit END) AS bal')->value('bal') ?? 0.0);
     }
 }

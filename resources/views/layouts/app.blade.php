@@ -33,7 +33,7 @@
     $currentPlanCode = 'starter';
 
     if ($activeSub) {
-        if ($activeSub->trial_ends_at && $activeSub->trial_ends_at >= now()) {
+    if ($activeSub->status === 'trial' && $activeSub->trial_ends_at && $activeSub->trial_ends_at >= now()) {
             $isTrial = true;
             $trialDaysLeft = (int) ceil(now()->diffInDays($activeSub->trial_ends_at, false));
         }
@@ -999,11 +999,13 @@ document.addEventListener('keydown', function (e) {
 
             typing.remove();
             convId = data.conversation_id;
-            const answerHtml = (data.answer || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
-            lnAiAddMsg(answerHtml, 'assistant', data.action_url, data.action_label);
-        } catch (e) {
-            typing.remove();
-            lnAiAddMsg('Maaf, terjadi kesalahan. Silakan coba lagi.', 'assistant');
+            let formattedText = (data.answer || '')
+    .replace(/</g, '&lt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')             
+    .replace(/\n/g, '<br>');                          
+
+    lnAiAddMsg(formattedText, 'assistant', data.action_url, data.action_label);
         } finally {
             input.disabled = false;
             btn.disabled = false;

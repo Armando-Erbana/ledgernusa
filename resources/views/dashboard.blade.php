@@ -4,130 +4,153 @@
 
 @section('content')
 
-@if($isConsolidated ?? false)
-    <div class="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800">
-        <strong>Mode Konsolidasi</strong> — angka di bawah adalah total dari <strong>seluruh cabang</strong>.
-    </div>
-@endif
-
-@php
-    $likuid = $totalKas + $totalBank;
-    $kasPct = $likuid > 0 ? max(0, min(100, round($totalKas / $likuid * 100))) : 50;
-    $totalAkun  = \App\Models\Account::where('company_id', session('company_id'))->count();
-    $totalJurnal = \App\Models\Journal::where('company_id', session('company_id'))->count();
-@endphp
-
 <style>
-.db-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute,#6E6E73)}
-.db-eyebrow i{width:18px;height:2px;border-radius:2px;background:#2563EB}
-.db-title{margin:8px 0 4px;font-size:28px;font-weight:700;letter-spacing:-.022em;color:#1E3A8A}
-.db-sub{margin:0 0 24px;font-size:13.5px;color:var(--mute,#6E6E73)}
+    /* ══════════════════════════════════════════════
+       CSS MURNI UNTUK DASHBOARD (ANTI-BERANTAKAN)
+       ══════════════════════════════════════════════ */
+    
+    .db-banner {
+        margin-bottom: 20px; padding: 12px 16px; border-radius: 12px;
+        background-color: #EFF6FF; border: 1px solid #BFDBFE; 
+        font-size: 13px; color: #1E3A8A; line-height: 1.5;
+    }
+    
+    .db-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mute,#6E6E73)}
+    .db-eyebrow i{width:18px;height:2px;border-radius:2px;background:#2563EB}
+    .db-title{margin:8px 0 4px;font-size:28px;font-weight:700;letter-spacing:-.022em;color:#1E3A8A}
+    .db-sub{margin:0 0 24px;font-size:13.5px;color:var(--mute,#6E6E73)}
 
-.db-glass{
-    background:var(--glass,rgba(255,255,255,.78));
-    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
-    border:1px solid rgba(255,255,255,.78);border-radius:22px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .5px var(--hair,rgba(0,0,0,.08)),var(--shadow-s,0 6px 20px -8px rgba(0,0,0,.1));
-}
+    .db-glass{
+        background:var(--glass,rgba(255,255,255,.78));
+        -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+        border:1px solid rgba(255,255,255,.78);border-radius:22px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .5px var(--hair,rgba(0,0,0,.08)),var(--shadow-s,0 6px 20px -8px rgba(0,0,0,.1));
+    }
 
-/* ===== Ringkasan ===== */
-.db-stats{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:22px}
-.db-stat{padding:22px;display:flex;flex-direction:column;gap:10px}
-.db-lbl{font-size:12.5px;font-weight:600;color:var(--mute,#6E6E73)}
-.db-val{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#1E3A8A}
-.db-val small{margin-right:4px;font-size:15px;font-weight:600;color:var(--mute,#6E6E73)}
-.db-note{font-size:12px;color:var(--mute,#6E6E73)}
+    /* ===== Ringkasan ===== */
+    .db-stats {
+        display: grid; grid-template-columns: 1fr; /* Default 1 kolom di HP */
+        gap: 16px; margin-bottom: 22px;
+    }
+    @media(min-width: 768px) {
+        .db-stats { grid-template-columns: 2fr 1fr 1fr; } /* 3 kolom di Desktop */
+    }
+    
+    .db-stat{padding:22px;display:flex;flex-direction:column;gap:10px}
+    .db-lbl{font-size:12.5px;font-weight:600;color:var(--mute,#6E6E73)}
+    .db-val{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#1E3A8A}
+    .db-val small{margin-right:4px;font-size:15px;font-weight:600;color:var(--mute,#6E6E73)}
+    .db-note{font-size:12px;color:var(--mute,#6E6E73)}
 
-.db-hero{position:relative;overflow:hidden;gap:14px;color:#fff;
-    background:linear-gradient(145deg,#2563EB,#1E3A8A);border-color:rgba(255,255,255,.12);
-    box-shadow:0 18px 40px -16px rgba(37,99,235,.55),inset 0 1px 0 rgba(255,255,255,.18)}
-.db-hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.6;
-    background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(255,255,255,.05) 27px 28px)}
-.db-hero > *{position:relative}
-.db-hero .db-lbl{color:rgba(255,255,255,.7)}
-.db-hero .db-val{font-size:32px;color:#fff}
-.db-hero .db-val small{color:rgba(255,255,255,.65)}
-.db-split{display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.14)}
-.db-split span:first-child{background:#fff}
-.db-split span:last-child{background:rgba(255,255,255,.4)}
-.db-parts{display:flex;gap:30px;flex-wrap:wrap}
-.db-part small{display:flex;align-items:center;gap:7px;font-size:11.5px;color:rgba(255,255,255,.7)}
-.db-part small::before{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
-.db-part.b small::before{background:rgba(255,255,255,.4)}
-.db-part b{display:block;margin-top:4px;font-size:15px;font-weight:600}
+    .db-hero{position:relative;overflow:hidden;gap:14px;color:#fff;
+        background:linear-gradient(145deg,#2563EB,#1E3A8A);border-color:rgba(255,255,255,.12);
+        box-shadow:0 18px 40px -16px rgba(37,99,235,.55),inset 0 1px 0 rgba(255,255,255,.18)}
+    .db-hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.6;
+        background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(255,255,255,.05) 27px 28px)}
+    .db-hero > *{position:relative}
+    .db-hero .db-lbl{color:rgba(255,255,255,.7)}
+    .db-hero .db-val{font-size:32px;color:#fff}
+    .db-hero .db-val small{color:rgba(255,255,255,.65)}
+    .db-split{display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.14)}
+    .db-split span:first-child{background:#fff}
+    .db-split span:last-child{background:rgba(255,255,255,.4)}
+    .db-parts{display:flex;gap:30px;flex-wrap:wrap;margin-top: auto;}
+    .db-part small{display:flex;align-items:center;gap:7px;font-size:11.5px;color:rgba(255,255,255,.7)}
+    .db-part small::before{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
+    .db-part.b small::before{background:rgba(255,255,255,.4)}
+    .db-part b{display:block;margin-top:4px;font-size:15px;font-weight:600}
 
-/* ===== Aksi cepat ===== */
-.db-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px}
-.db-btn{height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;border-radius:13px;
-    font-family:inherit;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:.16s}
-.db-btn.pri{color:#fff;border:0;background:linear-gradient(180deg,#2563EB,#1E3A8A);box-shadow:0 8px 18px -8px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.18)}
-.db-btn.pri:hover{background:linear-gradient(180deg,#1E3A8A,#1E3A8A);transform:translateY(-1px)}
-.db-btn.ghost{color:#1E3A8A;background:rgba(255,255,255,.75);border:1px solid var(--hair,rgba(0,0,0,.08))}
-.db-btn.ghost:hover{background:#fff;border-color:rgba(37,99,235,.35)}
-.db-btn:active{transform:scale(.98)}
+    /* ===== Grafik ===== */
+    .db-chart-card{padding: 22px; margin-bottom: 22px;}
+    .db-chart-head{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;}
+    .db-chart-wrap{display:flex;align-items:flex-end;gap:8px;height:140px;margin-top:16px;padding-bottom:24px;position:relative}
+    .db-chart-wrap::after{content:"";position:absolute;bottom:24px;left:0;right:0;border-bottom:1px dashed rgba(0,0,0,.1);z-index:0}
+    .db-bar-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative;z-index:1}
+    .db-bar{width:100%;max-width:40px;background:linear-gradient(180deg, #3B82F6, #1E3A8A);border-radius:6px 6px 0 0;transition:height 0.4s ease;position:relative;min-height:4px;}
+    .db-bar:hover{filter:brightness(1.1)}
+    .db-bar-label{position:absolute;bottom:-24px;font-size:10px;color:var(--mute,#6E6E73);white-space:nowrap}
 
-/* ===== Section ===== */
-.db-sec{margin:0 0 12px;font-size:16px;font-weight:700;letter-spacing:-.01em;color:#1E3A8A}
+    /* ===== Aksi cepat ===== */
+    .db-actions{display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:30px}
+    @media(min-width: 640px) { .db-actions { display: flex; flex-wrap: wrap; } }
+    
+    .db-btn{height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 20px;border-radius:13px;
+        font-family:inherit;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:.16s; width: 100%;}
+    .db-btn.pri{grid-column: 1 / -1; color:#fff;border:0;background:linear-gradient(180deg,#2563EB,#1E3A8A);box-shadow:0 8px 18px -8px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.18)}
+    .db-btn.pri:hover{background:linear-gradient(180deg,#1E3A8A,#1E3A8A);transform:translateY(-1px)}
+    .db-btn.ghost{color:#1E3A8A;background:rgba(255,255,255,.75);border:1px solid var(--hair,rgba(0,0,0,.08))}
+    .db-btn.ghost:hover{background:#fff;border-color:rgba(37,99,235,.35)}
+    .db-btn:active{transform:scale(.98)}
 
-/* ===== Menu cepat (teks saja) ===== */
-.db-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:30px}
-.db-q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;text-decoration:none;color:#1E3A8A;
-    border-radius:18px;transition:transform .18s,box-shadow .18s}
-.db-q:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .5px var(--hair-2,rgba(0,0,0,.14)),var(--shadow-m,0 18px 44px -16px rgba(0,0,0,.18))}
-.db-q b{display:block;font-size:14px;font-weight:600;letter-spacing:-.005em}
-.db-q small{display:block;margin-top:3px;font-size:12px;color:var(--mute,#6E6E73)}
-.db-q .go{flex:none;font-size:15px;color:var(--faint,#86868B);transition:transform .18s,color .18s}
-.db-q:hover .go{transform:translateX(3px);color:#1E3A8A}
+    /* ===== Section ===== */
+    .db-sec{margin:0 0 12px;font-size:16px;font-weight:700;letter-spacing:-.01em;color:#1E3A8A}
 
-/* ===== Tabel ===== */
-.db-card{overflow:hidden}
-.db-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.db-table{width:100%;border-collapse:collapse;min-width:520px}
-.db-table th{padding:13px 20px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-    color:var(--mute,#6E6E73);background:rgba(0,0,0,.025);border-bottom:1px solid var(--hair,rgba(0,0,0,.08));white-space:nowrap}
-.db-table th.num{text-align:right}
-.db-table th.center{text-align:center}
-.db-table td{padding:15px 20px;font-size:13.5px;color:#1E3A8A;border-bottom:1px solid var(--hair,rgba(0,0,0,.08))}
-.db-table tbody tr{transition:background .14s}
-.db-table tbody tr:hover{background:rgba(37,99,235,.04)}
-.db-table tbody tr:last-child td{border-bottom:0}
-.db-table td.num{text-align:right;font-weight:600;white-space:nowrap}
-.db-table td.center{text-align:center}
-.db-table td.date{color:var(--mute,#6E6E73);white-space:nowrap}
-.db-ref{font-weight:600;color:#1E3A8A;text-decoration:underline;text-decoration-color:rgba(37,99,235,.35);text-underline-offset:3px}
-.db-ref:hover{text-decoration-color:#1E3A8A}
-.db-empty{text-align:center;padding:48px 20px !important;color:var(--mute,#6E6E73)}
+    /* ===== Menu cepat ===== */
+    .db-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:30px}
+    .db-q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;text-decoration:none;color:#1E3A8A;
+        border-radius:18px;transition:transform .18s,box-shadow .18s}
+    .db-q:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 0 0 .5px var(--hair-2,rgba(0,0,0,.14)),var(--shadow-m,0 18px 44px -16px rgba(0,0,0,.18))}
+    .db-q b{display:block;font-size:14px;font-weight:600;letter-spacing:-.005em}
+    .db-q small{display:block;margin-top:3px;font-size:11px;color:var(--mute,#6E6E73); line-height: 1.3;}
+    .db-q .go{flex:none;font-size:15px;color:var(--faint,#86868B);transition:transform .18s,color .18s}
+    .db-q:hover .go{transform:translateX(3px);color:#1E3A8A}
 
-.db-badge{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:600;text-transform:capitalize;
-    color:var(--soft,#515154);background:rgba(0,0,0,.05)}
-.db-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--dot,#86868B)}
-.db-badge.posted{--dot:var(--ok,#2E9E6B)}
-.db-badge.draft{--dot:var(--warn,#C98A1B)}
+    /* ===== Tabel ===== */
+    .db-card{overflow:hidden}
+    .db-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch; width: 100%;}
+    .db-table{width:100%;border-collapse:collapse;min-width:520px}
+    .db-table th{padding:13px 20px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+        color:var(--mute,#6E6E73);background:rgba(0,0,0,.025);border-bottom:1px solid var(--hair,rgba(0,0,0,.08));white-space:nowrap}
+    .db-table th.num{text-align:right}
+    .db-table th.center{text-align:center}
+    .db-table td{padding:15px 20px;font-size:13.5px;color:#1E3A8A;border-bottom:1px solid var(--hair,rgba(0,0,0,.08))}
+    .db-table tbody tr{transition:background .14s}
+    .db-table tbody tr:hover{background:rgba(37,99,235,.04)}
+    .db-table tbody tr:last-child td{border-bottom:0}
+    .db-table td.num{text-align:right;font-weight:600;white-space:nowrap}
+    .db-table td.center{text-align:center}
+    .db-table td.date{color:var(--mute,#6E6E73);white-space:nowrap}
+    .db-ref{font-weight:600;color:#1E3A8A;text-decoration:underline;text-decoration-color:rgba(37,99,235,.35);text-underline-offset:3px}
+    .db-ref:hover{text-decoration-color:#1E3A8A}
+    .db-empty{text-align:center;padding:48px 20px !important;color:var(--mute,#6E6E73)}
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
-    .db-glass{background:rgba(250,250,252,.97)}
-}
-@media(max-width:900px){
-    .db-stats{grid-template-columns:1fr 1fr}
-    .db-hero{grid-column:span 2}
-}
-@media(max-width:520px){
-    .db-title{font-size:23px}
-    .db-val{font-size:22px}
-    .db-hero .db-val{font-size:27px}
-    .db-stat{padding:18px}
-    .db-actions .db-btn{flex:1 1 calc(50% - 5px);padding:0 12px}
-    .db-actions .db-btn.pri{flex-basis:100%}
-}
+    .db-badge{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:600;text-transform:capitalize;
+        color:var(--soft,#515154);background:rgba(0,0,0,.05)}
+    .db-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--dot,#86868B)}
+    .db-badge.posted{--dot:var(--ok,#2E9E6B)}
+    .db-badge.draft{--dot:var(--warn,#C98A1B)}
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+        .db-glass{background:rgba(250,250,252,.97)}
+    }
+    
+    @media(max-width:520px){
+        .db-title{font-size:23px}
+        .db-val{font-size:22px}
+        .db-hero .db-val{font-size:27px}
+        .db-stat{padding:16px}
+        .db-chart-card{padding: 16px;}
+    }
 </style>
 
 <div class="db">
+
+    @if($isConsolidated ?? false)
+        <div class="db-banner">
+            <strong>Mode Konsolidasi</strong> — angka di bawah adalah total dari <strong>seluruh cabang</strong>.
+        </div>
+    @endif
+
+    @php
+        $likuid = $totalKas + $totalBank;
+        $kasPct = $likuid > 0 ? max(0, min(100, round($totalKas / $likuid * 100))) : 50;
+    @endphp
 
     <span class="db-eyebrow"><i></i>Ringkasan</span>
     <h1 class="db-title">Dashboard</h1>
     <p class="db-sub">Ringkasan keuangan {{ auth()->user()->activeCompany()->name ?? 'perusahaan Anda' }}</p>
 
-    {{-- Ringkasan --}}
+    {{-- Ringkasan (Kartu) --}}
     <div class="db-stats">
         <div class="db-glass db-stat db-hero">
             <span class="db-lbl">Total Kas &amp; Bank</span>
@@ -135,22 +158,6 @@
             <div class="db-split" role="img" aria-label="Kas {{ $kasPct }} persen, bank {{ 100 - $kasPct }} persen">
                 <span style="width:{{ $kasPct }}%"></span><span style="width:{{ 100 - $kasPct }}%"></span>
             </div>
-            @if(($chartData ?? collect())->count())
-<div class="ln-stat mt-4">
-    <div class="lbl">Penjualan 7 Hari Terakhir</div>
-    <div class="mt-4 flex items-end gap-2 h-24">
-        @php $max = $chartData->max('total') ?: 1; @endphp
-        @foreach($chartData as $row)
-            <div class="flex-1 flex flex-col items-center gap-1">
-                <div class="w-full bg-blue-500 rounded-t"
-                     style="height: {{ ($row->total / $max) * 100 }}%"
-                     title="{{ number_format($row->total, 0, ',', '.') }}"></div>
-                <span class="text-[10px] text-[var(--mute)]">{{ \Carbon\Carbon::parse($row->d)->format('d/m') }}</span>
-            </div>
-        @endforeach
-    </div>
-</div>
-@endif
             <div class="db-parts">
                 <div class="db-part">
                     <small>Saldo Kas</small>
@@ -171,10 +178,29 @@
 
         <div class="db-glass db-stat">
             <span class="db-lbl">Total Jurnal</span>
-            <div class="db-val">{{ number_format($totalJurnal, 0, ',', '.') }}</div>
+            <div class="db-val">{{ number_format($totalJournal, 0, ',', '.') }}</div>
             <span class="db-note">Semua transaksi tercatat</span>
         </div>
     </div>
+
+    {{-- Grafik Penjualan 7 Hari --}}
+    @if(($chartData ?? collect())->count() > 0)
+    <div class="db-glass db-chart-card">
+        <div class="db-chart-head">
+            <span class="db-lbl" style="font-size:14px; color:#1E3A8A;">Grafik Penjualan (7 Hari Terakhir)</span>
+            <span class="db-note">Total: Rp {{ number_format($chartData->sum('total'), 0, ',', '.') }}</span>
+        </div>
+        <div class="db-chart-wrap">
+            @php $max = $chartData->max('total') ?: 1; @endphp
+            @foreach($chartData as $row)
+                <div class="db-bar-col">
+                    <div class="db-bar" style="height: {{ max(5, ($row->total / $max) * 100) }}%" title="Rp {{ number_format($row->total, 0, ',', '.') }}"></div>
+                    <span class="db-bar-label">{{ \Carbon\Carbon::parse($row->d)->format('d/m') }}</span>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     {{-- Aksi cepat --}}
     <div class="db-actions">

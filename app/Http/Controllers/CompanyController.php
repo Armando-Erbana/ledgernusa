@@ -119,4 +119,41 @@ class CompanyController extends Controller
 
         return redirect()->route('dashboard');
     }
+
+    public function updateBusinessType(Request $request, $id)
+{
+    $request->validate([
+        'business_type' => 'required|in:jasa,dagang',
+    ]);
+
+    $company = auth()->user()->companies()->where('companies.id', $id)->firstOrFail();
+
+    // Cek apakah company benar-benar kosong (belum ada data keuangan)
+    $hasJournals = \App\Models\Journal::where('company_id', $company->id)->exists();
+    $hasSales = \App\Models\Sale::where('company_id', $company->id)->exists();
+    $hasPurchases = \App\Models\Purchase::where('company_id', $company->id)->exists();
+    $hasCash = \App\Models\CashTransaction::where('company_id', $company->id)->exists();
+
+    if ($hasJournals || $hasSales || $hasPurchases || $hasCash) {
+        return back()->with('error', 'Gagal! Anda tidak dapat mengubah jenis bisnis karena sudah ada data transaksi/jurnal di perusahaan ini.');
+    }
+
+    if ($company->business_type === $request->business_type) {
+        return back()->with('error', 'Jenis bisnis sudah sama.');
+    }
+
+    \Illuminate\Support\Facades\DB::transaction(function () use ($company, $request) {
+        // 1. Hapus COA lama
+        \App\Models\Account::where('company_id', $company->id)->delete();
+
+        // 2. Update tipe bisnis
+        $company->update(['business_type' => $request->business_type]);
+
+        // 3. Buatkan COA baru sesuai tipe yang dipilih
+        app(\App\Services\ChartOfAccountsSeeder::class)->seed($company, $request->business_type);
+    });
+
+    return back()->with('success', 'Berhasil! Jenis bisnis telah diubah dan COA baru telah dibuat.');
+    }
+
 }

@@ -75,12 +75,41 @@
             <div class="dz-glass dz-co {{ $isActive ? 'on' : '' }}">
                 <span class="dz-av">{{ strtoupper(mb_substr($c->name, 0, 2)) }}</span>
                 <div class="dz-info">
-                    <div class="dz-name">{{ $c->name }}</div>
-                    <div class="dz-meta">
-                        <span class="dz-chip">{{ $c->currency }}</span>
-                        <span class="dz-chip role">Role: {{ $c->pivot->role }}</span>
-                    </div>
-                </div>
+    <div class="dz-name">{{ $c->name }}</div>
+    <div class="dz-meta">
+        <span class="dz-chip">{{ $c->currency }}</span>
+        <span class="dz-chip role">Role: {{ $c->pivot->role }}</span>
+        
+        {{-- Indikator & Tombol Ubah Tipe Bisnis --}}
+        @if($c->business_type)
+            <span class="dz-chip" style="background:rgba(29,78,216,.08);color:var(--b1);text-transform:uppercase;">
+                {{ $c->business_type }}
+            </span>
+            
+            {{-- Cek apakah kosong (kita asumsikan cek di backend, di UI kita tampilkan tombolnya) --}}
+            @if(!\App\Models\Journal::where('company_id', $c->id)->exists())
+                <button type="button" 
+                        onclick="document.getElementById('form-ubah-{{ $c->id }}').classList.toggle('hidden')"
+                        class="text-[11px] text-blue-600 font-semibold hover:underline ml-1">
+                    Ubah Tipe
+                </button>
+            @endif
+        @endif
+    </div>
+    
+    @if(!\App\Models\Journal::where('company_id', $c->id)->exists())
+        <div id="form-ubah-{{ $c->id }}" class="hidden mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2">
+            <form method="POST" action="{{ route('companies.update-business-type', $c->id) }}" class="flex items-center gap-2 w-full">
+                @csrf @method('PUT')
+                <select name="business_type" class="text-xs p-1.5 border rounded bg-white w-full max-w-[150px]" required>
+                    <option value="jasa" @selected($c->business_type === 'jasa')>Bisnis Jasa</option>
+                    <option value="dagang" @selected($c->business_type === 'dagang')>Bisnis Dagang</option>
+                </select>
+                <button type="submit" onclick="return confirm('Yakin ubah tipe? COA lama akan dihapus dan dibuat ulang.')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 transition">Simpan</button>
+            </form>
+            </div>
+            @endif
+        </div>
                @php $isLocked = in_array($c->id, $lockedIds ?? [], true); @endphp
         @if($isActive)
     <span class="dz-badge">Aktif</span>

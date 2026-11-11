@@ -237,12 +237,25 @@
                         <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
+                    {{-- TAMBAHKAN KOLOM KONFIRMASI PASSWORD DI SINI --}}
                     <div class="ln-field">
-                        <label for="password_confirmation">Konfirmasi password</label>
+                        <label for="password_confirmation">Konfirmasi Password</label>
                         <x-text-input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" />
                         <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                     </div>
 
+                    <div style="margin-top: 24px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px;">
+                        <input type="checkbox" name="terms" id="terms" required 
+                               style="width: 18px !important; height: 18px !important; min-width: 18px !important; margin-top: 3px; cursor: pointer; appearance: auto; -webkit-appearance: checkbox; accent-color: #1C8FC4;">
+                        
+                        <label for="terms" style="font-size: 13px; line-height: 1.5; color: #5B6577; cursor: pointer; user-select: none;">
+                            Saya menyetujui 
+                            <a href="{{ route('legal.show', 'terms') }}" target="_blank" style="color: #1C8FC4; text-decoration: underline;">Syarat & Ketentuan</a>, 
+                            <a href="{{ route('legal.show', 'privacy') }}" target="_blank" style="color: #1C8FC4; text-decoration: underline;">Kebijakan Privasi</a>, dan 
+                            <a href="{{ route('legal.show', 'dpa') }}" target="_blank" style="color: #1C8FC4; text-decoration: underline;">Perjanjian Pengolahan Data</a>.
+                        </label>
+                    </div>
+                    
                     <button type="submit" class="ln-submit">Daftar</button>
 
                     <a class="ln-login-link" href="{{ route('login') }}">Sudah punya akun? Masuk</a>

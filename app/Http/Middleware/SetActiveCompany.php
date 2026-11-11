@@ -44,6 +44,7 @@ class SetActiveCompany
         && ! $request->routeIs('onboarding.*')
         && ! $request->routeIs('companies.*')
         && ! $request->routeIs('profile.*')
+        && ! $request->routeIs('subscription.*') 
         && ! $request->routeIs('logout')) {
         return redirect()->route('onboarding.index');
     }

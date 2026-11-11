@@ -69,6 +69,7 @@ class CashTransaction extends Model
     {
         $journal = Journal::create([
             'company_id' => $this->company_id,
+            'branch_id'   => $this->branch_id,
             'date' => $this->date,
             'reference' => $this->reference ?: 'KAS-' . $this->id,
             'description' => $this->description,

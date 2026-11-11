@@ -30,6 +30,9 @@ Route::get('/', function () {
 Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])
     ->name('invitations.accept');
 
+    // --- Halaman Legal (Bisa diakses tanpa login) ---
+    Route::get('/legal/{page}', [\App\Http\Controllers\LegalController::class, 'show'])->name('legal.show');
+
 // =========================================================
 // GRUP 1: Auth + Active Company (TANPA cek subscription)
 // =========================================================
@@ -46,6 +49,7 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
     Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
     Route::get('/companies/switch/{id}', [CompanyController::class, 'switch'])->name('companies.switch');
+    Route::put('/companies/{id}/business-type', [\App\Http\Controllers\CompanyController::class, 'updateBusinessType'])->name('companies.update-business-type');
 
     // ---------- Profile ----------
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -71,7 +75,9 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     // ---------- Audit Trail ----------
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
-});
+    });
+
+    Route::get('/export/journals', [\App\Http\Controllers\DataExportController::class, 'exportJournals'])->name('export.journals');
 
 // =========================================================
 // GRUP 2: Auth + Active Company + Subscription + Branch Access
