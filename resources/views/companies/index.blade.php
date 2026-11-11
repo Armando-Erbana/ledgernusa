@@ -59,7 +59,13 @@
         </div>
         <div class="dz-head-r">
             <span class="dz-count">{{ number_format($companies->count()) }} company</span>
-            <a href="{{ route('companies.create') }}" class="dz-btn pri">+ Baru</a>
+            @if(($remainingSlots ?? 0) > 0)
+        <a href="{{ route('companies.create') }}" class="dz-btn pri">+ Baru</a>
+    @else
+     <a href="{{ route('subscription.index') }}" class="dz-btn pri" title="Upgrade untuk menambah company">
+        + Baru (Perlu Upgrade)
+    </a>
+@endif
         </div>
     </div>
 
@@ -75,11 +81,14 @@
                         <span class="dz-chip role">Role: {{ $c->pivot->role }}</span>
                     </div>
                 </div>
-                @if($isActive)
-                    <span class="dz-badge">Aktif</span>
-                @else
-                    <a href="{{ route('companies.switch', $c->id) }}" class="dz-btn ghost sm">Pilih</a>
-                @endif
+               @php $isLocked = in_array($c->id, $lockedIds ?? [], true); @endphp
+        @if($isActive)
+    <span class="dz-badge">Aktif</span>
+    @elseif($isLocked)
+    <a href="{{ route('subscription.index') }}" class="dz-btn ghost sm" style="color:#B45309;border-color:rgba(180,83,9,.3);" title="Upgrade ke Pro">🔒 Terkunci</a>
+    @else
+    <a href="{{ route('companies.switch', $c->id) }}" class="dz-btn ghost sm">Pilih</a>
+    @endif
             </div>
         @endforeach
     </div>

@@ -12,8 +12,10 @@
     /* ---------- 2. Cek Status Langganan & Role User ---------- */
     $activeCompany = auth()->user()->activeCompany();
     $companyId = session('company_id');
-    $userRole = auth()->user()->roleInActiveCompany(); // owner, admin, staff
-    
+    $userRole = auth()->user()->roleInActiveCompany();
+    $businessType = $activeCompany->business_type ?? null;
+    $isJasa = $businessType === 'jasa';
+
     $activeSub = \App\Models\Subscription::where('company_id', $companyId)
         ->where(function($q) {
             $q->where(function($sub1) {
@@ -25,7 +27,7 @@
         ->latest('id')
         ->first();
 
-    $isExpired = !$activeSub; 
+    $isExpired = !$activeSub;
     $isTrial = false;
     $trialDaysLeft = 0;
     $currentPlanCode = 'starter';
@@ -42,7 +44,7 @@
     }
 
     $isPro = $isTrial || in_array($currentPlanCode, ['pro', 'enterprise']);
-    
+
     // LOGIKA MULTI-CABANG & ROLE
     $isStaff = $userRole === 'staff';
     $isOwner = $userRole === 'owner';
@@ -64,6 +66,11 @@
     $activeBranch = $branches->firstWhere('id', session('branch_id')) ?? $branches->firstWhere('is_main', true) ?? $branches->first();
     $showBranchDropdown = $isPro && ($branches->count() > 1 || !$isStaff);
 
+    /* ---------- 2b. Multi-Company ---------- */
+    $allCompanies = auth()->user()->companies()->orderBy('company_users.created_at')->get();
+    $accessService = app(\App\Services\CompanyAccessService::class);
+    $lockedIds = $accessService->lockedCompanyIds(auth()->user());
+
     /* ---------- 3. Menu utama (dock bawah) ---------- */
     $navMain = array_filter([
         ['Dashboard', 'dashboard',          'dashboard',      '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/>'],
@@ -74,7 +81,7 @@
         !$isStaff ? ['Laporan',   'reports.index',      'reports.*',      '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V9M16 15v-6"/>'] : null,
     ]);
 
-    /* ---------- 4. Menu "Lainnya" (Role & Plan Filtering) ---------- */
+    /* ---------- 4. Menu "Lainnya" ---------- */
     $lnMore = [
         'Kas & Bank' => array_filter([
             ['Kas & Bank',      'cash.index',                    'cash.*'],
@@ -93,7 +100,7 @@
             ['Pembelian',       'purchases.index',               'purchases.*'],
             ['Supplier',        'suppliers.index',               'suppliers.*'],
         ]),
-        'Persediaan' => array_filter([
+        'Persediaan' => $isJasa ? [] : array_filter([
             ['Produk',          'products.index',                'products.*'],
             $isPro && !$isStaff ? ['Mutasi Stok', 'stock.index', 'stock.*'] : null,
             $isPro && !$isStaff ? ['Gudang',      'warehouses.index', 'warehouses.*'] : null,
@@ -118,6 +125,16 @@
             $isPro && !$isStaff ? ['Multi-Cabang', 'branches.index', 'branches.*'] : null,
         ]),
     ];
+
+    $filterMenu = function (array $items): array {
+        return array_values(array_filter(
+            $items,
+            fn ($item) => $item && \Illuminate\Support\Facades\Route::has($item[1])
+        ));
+    };
+    $navMain = $filterMenu($navMain);
+    $lnMore  = array_map($filterMenu, $lnMore);
+    $lnMore  = array_filter($lnMore, fn ($items) => count($items) > 0);
 
     $isOn          = fn($m) => request()->routeIs(...(array) $m);
     $mainOnAll     = collect($navMain)->contains(fn($n) => $isOn($n[2]));
@@ -200,7 +217,7 @@
 
         .ln-header { position: sticky; top: 0; z-index: 40; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 0; }
         .ln-bar { max-width: 1152px; margin: 0 auto; min-height: 56px; padding: 8px 12px 8px 18px; border-radius: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-        
+
         .ln-brand-group { display: flex; align-items: center; gap: 12px; }
         .ln-brand { display: flex; align-items: center; flex: none; text-decoration: none; }
         .ln-brand img { height: 26px; width: auto; display: block; }
@@ -208,23 +225,69 @@
         .ln-brand-mangata { display: flex; flex-direction: column; justify-content: center; }
         .ln-brand-mangata span { font-size: 10px; font-weight: 500; color: var(--mute); line-height: 1.2; text-transform: uppercase; letter-spacing: .05em; }
         .ln-brand-mangata b { font-size: 12px; font-weight: 700; color: var(--ink); }
-        
+
         .ln-right { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
         .ln-right form { margin: 0; }
+
+        /* ═══════════════════════════════════════════════════════════
+           COMPANY DROPDOWN — CSS yang sebelumnya HILANG
+           ═══════════════════════════════════════════════════════════ */
+        .ln-company-wrap { position: relative; }
         .ln-company {
-            display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
-            max-width: min(46vw, 320px); padding: 6px 14px; border-radius: 12px; text-align: center; line-height: 1.25;
-            font-size: 12.5px; font-weight: 500; color: var(--soft); text-decoration: none;
-            background: rgba(255,255,255,.7); border: 1px solid var(--hair); transition: .16s;
+            display: inline-flex; align-items: center; justify-content: center;
+            max-width: min(46vw, 320px);
+            padding: 6px 14px; border-radius: 12px;
+            font-size: 12.5px; font-weight: 500; color: var(--soft);
+            line-height: 1.25; text-align: center;
+            background: rgba(255,255,255,.7); border: 1px solid var(--hair);
+            cursor: pointer; font-family: inherit; transition: .16s;
+        }
+        .ln-company > span {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            max-width: 240px;
         }
         .ln-company:hover { background: #fff; color: var(--ink); }
-        .ln-hlink, .ln-hlogout {
-            padding: 7px 11px; border-radius: 10px; border: 0; background: transparent; cursor: pointer; font-family: inherit;
-            font-size: 13px; font-weight: 500; color: var(--mute); text-decoration: none; transition: .16s; white-space: nowrap;
+        .ln-company svg { flex: none; width: 10px; height: 10px; margin-left: 6px; }
+        .ln-company-menu {
+            position: absolute; top: calc(100% + 6px); right: 0; width: 240px;
+            background: rgba(255,255,255,.97);
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+            border: 1px solid var(--hair); border-radius: 16px; box-shadow: var(--shadow-m);
+            opacity: 0; visibility: hidden; transform: translateY(-8px); transition: .2s;
+            z-index: 100; overflow: hidden; padding: 6px;
         }
-        .ln-hlink:hover { color: var(--ink); background: rgba(0,0,0,.05); }
-        .ln-hlogout:hover { color: var(--bad); background: rgba(208,74,74,.08); }
+        .ln-company-wrap.is-open .ln-company-menu {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        @media (min-width: 768px) {
+            .ln-company-wrap:hover .ln-company-menu {
+                opacity: 1; visibility: visible; transform: translateY(0);
+            }
+        }
+        .ln-company-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 12px; border-radius: 10px;
+            font-size: 13px; font-weight: 500; color: var(--soft);
+            text-decoration: none; transition: .15s; gap: 8px;
+        }
+        .ln-company-item > span:first-child {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+        }
+        .ln-company-item:hover { background: rgba(0,0,0,.04); color: var(--ink); }
+        .ln-company-item.active {
+            background: rgba(37,99,235,0.08); color: #2563EB; font-weight: 600;
+        }
+        .ln-company-item.locked {
+            opacity: .7; color: var(--mute);
+        }
+        .ln-company-item.locked:hover {
+            background: rgba(208,74,74,.08); color: var(--bad); opacity: 1;
+        }
+        .ln-company-divider { height: 1px; background: var(--hair); margin: 4px 8px; }
 
+        /* ═══════════════════════════════════════════════════════════
+           BRANCH DROPDOWN (existing)
+           ═══════════════════════════════════════════════════════════ */
         .ln-branch-wrap { position: relative; }
         .ln-branch-btn {
             display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 12px; cursor: pointer;
@@ -252,6 +315,19 @@
         .ln-branch-item.active { background: rgba(37,99,235,0.08); color: #2563EB; font-weight: 600; }
         .ln-branch-divider { height: 1px; background: var(--hair); margin: 4px 8px; }
 
+        /* ═══════════════════════════════════════════════════════════
+           HEADER LINKS
+           ═══════════════════════════════════════════════════════════ */
+        .ln-hlink, .ln-hlogout {
+            padding: 7px 11px; border-radius: 10px; border: 0; background: transparent; cursor: pointer; font-family: inherit;
+            font-size: 13px; font-weight: 500; color: var(--mute); text-decoration: none; transition: .16s; white-space: nowrap;
+        }
+        .ln-hlink:hover { color: var(--ink); background: rgba(0,0,0,.05); }
+        .ln-hlogout:hover { color: var(--bad); background: rgba(208,74,74,.08); }
+
+        /* ═══════════════════════════════════════════════════════════
+           BANNERS
+           ═══════════════════════════════════════════════════════════ */
         .ln-banner-expired { max-width: 1152px; margin: 12px auto 0; padding: 0 16px; }
         .ln-banner-expired > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; font-size: 13.5px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; box-shadow: 0 4px 12px -4px rgba(185, 28, 28, 0.15); }
         .ln-banner-expired a { font-weight: 600; text-decoration: underline; color: #991B1B; }
@@ -268,12 +344,18 @@
         .ln-alert-error { --dot: var(--bad); }
         .ln-alert ul { margin: 0; padding-left: 16px; }
 
+        /* ═══════════════════════════════════════════════════════════
+           POPUPS
+           ═══════════════════════════════════════════════════════════ */
         .ln-popup-container { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .ln-popup { min-width: 320px; max-width: 90vw; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #fff; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; pointer-events: auto; animation: popupSlideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .ln-popup-error { background: linear-gradient(135deg, #ef4444, #b91c1c); }
         .ln-popup-success { background: linear-gradient(135deg, #10b981, #047857); }
         @keyframes popupSlideDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* ═══════════════════════════════════════════════════════════
+           MAIN + TABBAR
+           ═══════════════════════════════════════════════════════════ */
         main { animation: ln-rise .35s ease both; }
         @keyframes ln-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
         main.ln-main { padding-bottom: calc(var(--dock-h) + var(--dock-gap) + 3.5rem + env(safe-area-inset-bottom, 0px)); }
@@ -301,6 +383,9 @@
             .ln-company { max-width: 320px; }
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           SHEET ("Lainnya")
+           ═══════════════════════════════════════════════════════════ */
         .ln-bd { position: fixed; inset: 0; z-index: 98; background: rgba(0,0,0,.2); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
         .ln-bd.open { opacity: 1; pointer-events: auto; }
         .ln-sheet [hidden] { display: none !important; }
@@ -350,6 +435,9 @@
             .ln-sheet-foot { padding: 14px 24px; }
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           PAGE + CARDS + FORMS
+           ═══════════════════════════════════════════════════════════ */
         .ln-page-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
         .ln-page-title { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -.022em; color: var(--ink); }
         .ln-page-sub { font-size: 13.5px; color: var(--mute); margin-top: 4px; }
@@ -429,6 +517,9 @@
         .ln-balance-ok { font-size: 13px; font-weight: 600; color: #1E7A4C; }
         .ln-balance-bad { font-size: 13px; font-weight: 600; color: #B5362F; }
 
+        /* ═══════════════════════════════════════════════════════════
+           AI ASSISTANT
+           ═══════════════════════════════════════════════════════════ */
         .ln-ai-fab { position: fixed; z-index: 90; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 14px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 0; cursor: pointer; color: #fff; background: linear-gradient(180deg, #2563EB, #1E3A8A); box-shadow: 0 12px 26px -8px rgba(37,99,235,.5), inset 0 1px 0 rgba(255,255,255,.2); transition: transform .18s; }
         .ln-ai-fab:hover { transform: translateY(-2px) scale(1.04); }
         .ln-ai-fab:active { transform: scale(.96); }
@@ -470,6 +561,10 @@
             .ln-ai-fab { right: 24px; }
             .ln-ai-panel { right: 24px; }
         }
+
+        /* ═══════════════════════════════════════════════════════════
+           MOBILE
+           ═══════════════════════════════════════════════════════════ */
         @media (max-width: 639px) {
             .ln-input, .ln-textarea, .ln-select { font-size: 16px; }
             .ln-input-sm { font-size: 15px; }
@@ -478,6 +573,7 @@
             .ln-ai-inputbar input { font-size: 16px; }
             .ln-bar { padding-left: 14px; }
             .ln-company { font-size: 11.5px; padding: 5px 10px; }
+            .ln-company > span { max-width: 100px; }
             .ln-hlogout { display: none; }
             .ln-branch-btn { padding: 5px 8px; font-size: 11px; }
             .ln-banner-expired > div, .ln-banner-trial > div { flex-direction: column; text-align: center; gap: 6px; }
@@ -495,7 +591,7 @@
 
 <header class="ln-header">
     <div class="ln-bar glass">
-        
+
         <div class="ln-brand-group">
             <a href="{{ route('dashboard') }}" class="ln-brand" aria-label="LedgerNusa — ke Dashboard">
                 <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa" height="26" decoding="async" fetchpriority="high">
@@ -508,14 +604,51 @@
         </div>
 
         <div class="ln-right">
-            @if($activeCompany)
-                <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">{{ $activeCompany->name }}</a>
+
+            {{-- ══════════ COMPANY DROPDOWN ══════════ --}}
+            @if($activeCompany && $allCompanies->count() > 0)
+                <div class="ln-company-wrap" id="companyDropdown">
+                    <button type="button" class="ln-company" onclick="document.getElementById('companyDropdown').classList.toggle('is-open')" title="Ganti perusahaan">
+                        <span>{{ $activeCompany->name }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="ln-company-menu">
+                        @foreach($allCompanies as $co)
+                            @php $isLocked = in_array($co->id, $lockedIds, true); @endphp
+                            @if($co->id == $activeCompany->id)
+                                <div class="ln-company-item active">
+                                    <span>{{ $co->name }}</span>
+                                    <span style="font-size:10px;color:var(--ok);font-weight:700;">Aktif</span>
+                                </div>
+                            @elseif($isLocked)
+                                <a href="{{ route('subscription.index') }}" class="ln-company-item locked" title="Upgrade ke Pro untuk mengakses company ini">
+                                    <span>{{ $co->name }}</span>
+                                    <span style="font-size:11px;">🔒</span>
+                                </a>
+                            @else
+                                <a href="{{ route('companies.switch', $co->id) }}" class="ln-company-item">
+                                    <span>{{ $co->name }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                        <div class="ln-company-divider"></div>
+                        <a href="{{ route('companies.index') }}" class="ln-company-item" style="font-size:12px;color:var(--mute);">
+                            <span>Kelola Company</span>
+                        </a>
+                    </div>
+                </div>
+            @elseif($activeCompany)
+                <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">
+                    <span>{{ $activeCompany->name }}</span>
+                </a>
             @endif
 
-            {{-- Dropdown Cabang --}}
+            {{-- ══════════ BRANCH DROPDOWN ══════════ --}}
             @if($showBranchDropdown)
                 <div class="ln-branch-wrap" id="branchDropdown">
-                    <button class="ln-branch-btn" onclick="document.getElementById('branchDropdown').classList.toggle('is-open')">
+                    <button type="button" class="ln-branch-btn" onclick="document.getElementById('branchDropdown').classList.toggle('is-open')">
                         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         {{ $activeBranch ? Str::limit($activeBranch->name, 15) : 'Konsolidasi' }}
                     </button>
@@ -535,12 +668,12 @@
                                 @endif
                             </a>
                         @endforeach
-                        
+
                         @if(!$isStaff)
-                        <div class="ln-branch-divider"></div>
-                        <a href="{{ route('branches.index') }}" class="ln-branch-item" style="color: var(--mute); font-size: 12px;">
-                            Kelola Cabang...
-                        </a>
+                            <div class="ln-branch-divider"></div>
+                            <a href="{{ route('branches.index') }}" class="ln-branch-item" style="color: var(--mute); font-size: 12px;">
+                                Kelola Cabang...
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -556,7 +689,7 @@
             @endif
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button class="ln-hlogout">Logout</button>
+                <button type="submit" class="ln-hlogout">Logout</button>
             </form>
         </div>
     </div>
@@ -579,7 +712,7 @@
     </div>
 @endif
 
-{{-- POPUP ALERT CONTAINER (Hanya Ada Satu) --}}
+{{-- POPUP ALERT --}}
 <div class="ln-popup-container" id="popupContainer">
     @if(session('success'))
         <div class="ln-popup ln-popup-success">
@@ -709,7 +842,9 @@
 </div>
 
 <script>
-// ===== Menu "Lainnya" =====
+// ═══════════════════════════════════════════════════════
+// Menu "Lainnya"
+// ═══════════════════════════════════════════════════════
 (function () {
     const menu = document.getElementById('lnDdMenu');
     const bd = document.getElementById('lnDdBackdrop');
@@ -769,17 +904,33 @@
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && menu.classList.contains('open')) { setOpen(false); btn.focus(); }
     });
-
-    // Tutup dropdown cabang jika klik di luar area
-    document.addEventListener('click', function(e) {
-        const branchWrap = document.getElementById('branchDropdown');
-        if (branchWrap && !branchWrap.contains(e.target)) {
-            branchWrap.classList.remove('is-open');
-        }
-    });
 })();
 
-// ===== Asisten AI =====
+// ═══════════════════════════════════════════════════════
+// Close dropdowns saat klik di luar
+// ═══════════════════════════════════════════════════════
+document.addEventListener('click', function (e) {
+    const companyWrap = document.getElementById('companyDropdown');
+    if (companyWrap && !companyWrap.contains(e.target)) {
+        companyWrap.classList.remove('is-open');
+    }
+    const branchWrap = document.getElementById('branchDropdown');
+    if (branchWrap && !branchWrap.contains(e.target)) {
+        branchWrap.classList.remove('is-open');
+    }
+});
+
+// Close on Escape
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        document.getElementById('companyDropdown')?.classList.remove('is-open');
+        document.getElementById('branchDropdown')?.classList.remove('is-open');
+    }
+});
+
+// ═══════════════════════════════════════════════════════
+// Asisten AI
+// ═══════════════════════════════════════════════════════
 (function () {
     let convId = null;
     let greeted = false;

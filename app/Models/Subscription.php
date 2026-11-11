@@ -34,4 +34,11 @@ class Subscription extends Model
         $end = $this->status === 'trial' ? $this->trial_ends_at : $this->ends_at;
         return $end ? max(0, now()->diffInDays($end, false)) : 0;
     }
+
+    public function isTrial(): bool
+    {
+    return $this->status === 'trial'
+        && $this->trial_ends_at
+        && $this->trial_ends_at->isFuture();
+    }
 }

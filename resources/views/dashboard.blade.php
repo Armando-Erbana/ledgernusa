@@ -4,6 +4,12 @@
 
 @section('content')
 
+@if($isConsolidated ?? false)
+    <div class="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800">
+        <strong>Mode Konsolidasi</strong> — angka di bawah adalah total dari <strong>seluruh cabang</strong>.
+    </div>
+@endif
+
 @php
     $likuid = $totalKas + $totalBank;
     $kasPct = $likuid > 0 ? max(0, min(100, round($totalKas / $likuid * 100))) : 50;
@@ -129,6 +135,22 @@
             <div class="db-split" role="img" aria-label="Kas {{ $kasPct }} persen, bank {{ 100 - $kasPct }} persen">
                 <span style="width:{{ $kasPct }}%"></span><span style="width:{{ 100 - $kasPct }}%"></span>
             </div>
+            @if(($chartData ?? collect())->count())
+<div class="ln-stat mt-4">
+    <div class="lbl">Penjualan 7 Hari Terakhir</div>
+    <div class="mt-4 flex items-end gap-2 h-24">
+        @php $max = $chartData->max('total') ?: 1; @endphp
+        @foreach($chartData as $row)
+            <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full bg-blue-500 rounded-t"
+                     style="height: {{ ($row->total / $max) * 100 }}%"
+                     title="{{ number_format($row->total, 0, ',', '.') }}"></div>
+                <span class="text-[10px] text-[var(--mute)]">{{ \Carbon\Carbon::parse($row->d)->format('d/m') }}</span>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endif
             <div class="db-parts">
                 <div class="db-part">
                     <small>Saldo Kas</small>

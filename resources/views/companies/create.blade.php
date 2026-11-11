@@ -72,21 +72,43 @@
         @csrf
 
         {{-- ============ IDENTITAS ============ --}}
-        <div class="dz-row">
-            <div class="dz-field">
-                <label class="dz-lbl">Nama Perusahaan *</label>
-                <input type="text" name="name" value="{{ old('name') }}" required class="dz-in" placeholder="PT Maju Jaya">
-            </div>
-            <div class="dz-field">
-                <label class="dz-lbl">Currency *</label>
-                <input type="text" name="currency" value="{{ old('currency', 'IDR') }}" required class="dz-in cur" maxlength="8">
-            </div>
-        </div>
+        <div class="ln-form-card space-y-4">
+    <h2 class="ln-section-title">Buat Company Baru</h2>
 
-        <div class="dz-field">
-            <label class="dz-lbl">Alamat</label>
-            <textarea name="address" class="dz-ta" placeholder="Jl. Sudirman No. 1, Jakarta">{{ old('address') }}</textarea>
-        </div>
+    <div>
+        <label class="ln-label">Nama Perusahaan *</label>
+        <input type="text" name="name" value="{{ old('name') }}" required class="ln-input">
+    </div>
+
+    <div>
+        <label class="ln-label">Jenis Bisnis *</label>
+        <select name="business_type" required class="ln-select">
+            <option value="">— Pilih —</option>
+            <option value="jasa" @selected(old('business_type') === 'jasa')>Jasa (Konsultan, Agensi, dll)</option>
+            <option value="dagang" @selected(old('business_type') === 'dagang')>Dagang (Toko, Distributor, dll)</option>
+        </select>
+        <p class="text-xs text-[var(--mute)] mt-1">COA akan disesuaikan otomatis.</p>
+    </div>
+
+    <div>
+        <label class="ln-label">Mata Uang *</label>
+        <select name="currency" required class="ln-select">
+            <option value="IDR" @selected(old('currency') === 'IDR')>IDR — Rupiah</option>
+            <option value="USD" @selected(old('currency') === 'USD')>USD — Dollar</option>
+            <option value="SGD" @selected(old('currency') === 'SGD')>SGD — Singapore Dollar</option>
+        </select>
+    </div>
+
+    <div>
+        <label class="ln-label">Alamat (opsional)</label>
+        <textarea name="address" class="ln-textarea" rows="2">{{ old('address') }}</textarea>
+    </div>
+
+    <div class="ln-form-actions">
+        <button class="ln-btn-primary">Buat Company</button>
+        <a href="{{ route('companies.index') }}" class="ln-btn-cancel">Batal</a>
+    </div>
+</div>
 
         {{-- ============ PAJAK ============ --}}
         <div class="dz-section">

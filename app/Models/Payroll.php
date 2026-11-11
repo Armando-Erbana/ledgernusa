@@ -60,6 +60,7 @@ class Payroll extends Model
 
         $journal = Journal::create([
             'company_id' => $companyId,
+            'branch_id'   => $this->branch_id,
             'branch_id' => $this->branch_id ?? session('branch_id'),
             'date' => $this->payment_date ?? now(),
             'reference' => 'PAYROLL-' . $this->payroll_number,

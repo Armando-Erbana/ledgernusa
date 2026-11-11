@@ -59,6 +59,7 @@ class FixedAsset extends Model
     {
         $journal = Journal::create([
             'company_id' => $this->company_id,
+            'branch_id'   => $this->branch_id,
             'date' => $this->purchase_date,
             'reference' => 'AST-' . ($this->code ?: $this->id),
             'description' => 'Perolehan aset: ' . $this->name,

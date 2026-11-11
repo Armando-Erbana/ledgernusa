@@ -52,6 +52,10 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ---------- Onboarding ----------
+    Route::get('/onboarding', [\App\Http\Controllers\OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [\App\Http\Controllers\OnboardingController::class, 'store'])->name('onboarding.store');
+
     // ---------- Undang User ----------
     Route::get('/invitations', [\App\Http\Controllers\InvitationController::class, 'index'])->name('invitations.index');
     Route::post('/invitations', [\App\Http\Controllers\InvitationController::class, 'store'])->name('invitations.store');
@@ -78,7 +82,9 @@ Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->
     // AKSES UNTUK SEMUA ROLE
     // ==========================================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::post('/ai/chat', [AiAssistantController::class, 'chat'])->name('ai.chat');
+    Route::post('/ai/chat', [AiAssistantController::class, 'chat'])
+    ->middleware('throttle:ai')
+    ->name('ai.chat');
 
     // Kas & Bank
     Route::prefix('cash')->name('cash.')->group(function () {
@@ -123,6 +129,10 @@ Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->
     Route::resource('products', \App\Http\Controllers\ProductController::class);
     Route::resource('product-categories', \App\Http\Controllers\ProductCategoryController::class)
         ->except(['create', 'show', 'edit']);
+
+        // ---------- Onboarding ----------
+    Route::get('/onboarding', [\App\Http\Controllers\OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [\App\Http\Controllers\OnboardingController::class, 'store'])->name('onboarding.store');
 
     // ==========================================
     // AKSES OWNER & ADMIN (non-Pro)

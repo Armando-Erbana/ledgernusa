@@ -7,30 +7,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'name',
-        'npwp',
-        'is_pkp',
-        'ppn_rate',
-        'ppn_included',
-        'tax_office',
-        'efin',
-        'currency',
-        'fiscal_year_start',
-        'address',
-        'logo',
-        'status',
+    'name',
+    'business_type',              
+    'onboarding_completed_at',    
+    'npwp', 'is_pkp', 'ppn_rate', 'ppn_included', 'tax_office',
+    'efin', 'currency', 'fiscal_year_start', 'address', 'logo', 'status',
     ];
 
     protected $casts = [
-        'is_pkp' => 'boolean',
-        'ppn_included' => 'boolean',
-        'ppn_rate' => 'decimal:2',
-        'fiscal_year_start' => 'date',
+    'is_pkp' => 'boolean',
+    'ppn_included' => 'boolean',
+    'ppn_rate' => 'decimal:2',
+    'fiscal_year_start' => 'date',
+    'onboarding_completed_at' => 'datetime',   
     ];
 
+    public function isJasa(): bool
+    {
+    return $this->business_type === 'jasa';
+    }
+
+    public function isDagang(): bool
+    {
+    return $this->business_type === 'dagang';
+    }
     // ============ Relasi ============
 
     public function users()

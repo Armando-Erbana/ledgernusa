@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FlushesDashboardCache;
 use App\Models\Account;
 use App\Models\CashTransaction;
 use App\Models\Contact;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class CashTransactionController extends Controller
 {
+    use FlushesDashboardCache;
+
     public function index(Request $request)
     {
         $query = CashTransaction::with(['cashAccount', 'counterAccount', 'contact'])
@@ -31,13 +34,13 @@ class CashTransactionController extends Controller
         $transactions = $query->paginate(20)->withQueryString();
 
         $totalIn = CashTransaction::where('type', 'in')
-            ->when($request->filled('from'), fn($q) => $q->where('date', '>=', $request->get('from')))
-            ->when($request->filled('to'), fn($q) => $q->where('date', '<=', $request->get('to')))
+            ->when($request->filled('from'), fn ($q) => $q->where('date', '>=', $request->get('from')))
+            ->when($request->filled('to'), fn ($q) => $q->where('date', '<=', $request->get('to')))
             ->sum('amount');
 
         $totalOut = CashTransaction::where('type', 'out')
-            ->when($request->filled('from'), fn($q) => $q->where('date', '>=', $request->get('from')))
-            ->when($request->filled('to'), fn($q) => $q->where('date', '<=', $request->get('to')))
+            ->when($request->filled('from'), fn ($q) => $q->where('date', '>=', $request->get('from')))
+            ->when($request->filled('to'), fn ($q) => $q->where('date', '<=', $request->get('to')))
             ->sum('amount');
 
         return view('cash.index', compact('transactions', 'totalIn', 'totalOut'));
@@ -66,7 +69,6 @@ class CashTransactionController extends Controller
 
     public function store(Request $request)
     {
-        // PERBAIKAN: branch_id dihapus dari validate
         $data = $request->validate([
             'type' => 'required|in:in,out',
             'date' => 'required|date',
@@ -78,7 +80,6 @@ class CashTransactionController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        // PERBAIKAN: Tambahkan branch_id setelah validasi
         $data['branch_id'] = session('branch_id');
         $data['company_id'] = session('company_id');
         $data['created_by'] = auth()->id();
@@ -90,6 +91,8 @@ class CashTransactionController extends Controller
             $transaction->update(['journal_id' => $journal->id]);
         });
 
+        $this->flushDashboardCache();
+
         $typeLabel = $data['type'] === 'in' ? 'Kas Masuk' : 'Kas Keluar';
 
         return redirect()->route('cash.index')
@@ -99,6 +102,7 @@ class CashTransactionController extends Controller
     public function show(CashTransaction $cash)
     {
         $cash->load(['cashAccount', 'counterAccount', 'contact', 'journal.entries.account']);
+
         return view('cash.show', compact('cash'));
     }
 
@@ -145,6 +149,8 @@ class CashTransactionController extends Controller
             $cash->update(['journal_id' => $journal->id]);
         });
 
+        $this->flushDashboardCache();
+
         return redirect()->route('cash.index')->with('success', 'Transaksi kas diperbarui.');
     }
 
@@ -157,6 +163,8 @@ class CashTransactionController extends Controller
             }
             $cash->delete();
         });
+
+        $this->flushDashboardCache();
 
         return redirect()->route('cash.index')->with('success', 'Transaksi kas dihapus.');
     }

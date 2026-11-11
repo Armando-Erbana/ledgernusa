@@ -31,6 +31,7 @@ class Transfer extends Model
     {
         $journal = Journal::create([
             'company_id' => $this->company_id,
+            'branch_id'   => $this->branch_id,
             'date' => $this->date,
             'reference' => $this->reference ?: 'TRF-' . $this->id,
             'description' => $this->description ?: 'Transfer antar akun',

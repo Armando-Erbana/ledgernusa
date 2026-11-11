@@ -40,6 +40,7 @@ class Purchase extends Model
 
         $journal = Journal::create([
             'company_id' => $companyId,
+            'branch_id'   => $this->branch_id,
             'date' => $this->date,
             'reference' => $this->bill_number,
             'description' => 'Pembelian dari ' . ($this->supplier?->name ?? '-'),

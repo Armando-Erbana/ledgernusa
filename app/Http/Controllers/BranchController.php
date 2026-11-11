@@ -84,4 +84,4 @@ class BranchController extends Controller
         
         return back()->with('success', 'Berhasil beralih ke cabang ' . $branch->name);
     }
-}
+}                                           

@@ -34,7 +34,6 @@ class RegisteredUserController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Buat User
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -44,7 +43,6 @@ class RegisteredUserController extends Controller
             event(new Registered($user));
             Auth::login($user);
 
-            // 2. Cek apakah mendaftar lewat link undangan
             $invitationToken = $request->query('invitation');
             if ($invitationToken) {
                 $invitation = \App\Models\Invitation::where('token', $invitationToken)->first();
@@ -66,31 +64,34 @@ class RegisteredUserController extends Controller
                         ->with('success', 'Selamat! Anda bergabung ke ' . $invitation->company->name);
                 }
             }
+            
+    $company = Company::create([
+    'name'                    => 'Perusahaan ' . $user->name,
+    'business_type'           => null,     // ← NULL, user pilih di onboarding
+    'onboarding_completed_at' => null,     // ← NULL, wajib onboarding
+    ]);
+    $user->companies()->attach($company->id, ['role' => 'owner']);
+    session(['company_id' => $company->id]);
 
-            // 3. Jika daftar mandiri (tanpa undangan)
-            $company = Company::create([
-                'name' => 'Perusahaan ' . $user->name,
-            ]);
-            $user->companies()->attach($company->id, ['role' => 'owner']);
-            session(['company_id' => $company->id]);
 
-            // 4. Berikan Trial Pro 7 Hari
-            $proPlan = Plan::where('code', 'pro')->first();
-            $planId = $proPlan ? $proPlan->id : 2;
+    $proPlan = Plan::where('code', 'pro')->first() ?? Plan::first();
+    if ($proPlan) {
+    Subscription::create([
+        'company_id'    => $company->id,
+        'plan_id'       => $proPlan->id,
+        'status'        => 'trial',           
+        'billing_cycle' => 'monthly',
+        'trial_ends_at' => now()->addDays(14),
+        'starts_at'     => now(),
+        'ends_at'       => now()->addDays(14),
+    ]);
+    }
 
-            Subscription::create([
-                'company_id' => $company->id,
-                'plan_id' => $planId, 
-                'status' => 'active',
-                'billing_cycle' => 'monthly',
-                'trial_ends_at' => now()->addDays(7),
-                'ends_at' => now()->addDays(7),
-            ]);
+DB::commit();
 
-            DB::commit();
-
-            return redirect(route('dashboard', absolute: false))
-                ->with('success', 'Selamat datang! Anda mendapatkan akses Trial Pro selama 7 hari.');
+// 5. Redirect ke onboarding (bukan dashboard)
+return redirect()->route('onboarding.index')
+    ->with('success', 'Selamat datang! Pilih jenis bisnis Anda untuk memulai.');
 
         } catch (\Exception $e) {
             DB::rollBack();
