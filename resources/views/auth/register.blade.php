@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        /* Mencegah elemen melebar keluar layar */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         html, body { height: 100%; margin: 0; }
         body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         .ln-display { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; }
@@ -118,11 +123,40 @@
             align-items: center;
             justify-content: center;
             padding: 40px 24px;
+            width: 100%;
         }
+
+        /* Perbaikan untuk Mobile: Agar bisa di-scroll jika layar pendek */
+        @media (max-width: 1023px) {
+            .ln-form-col {
+                align-items: flex-start;
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
+        }
+
         .ln-form-inner { width: 100%; max-width: 380px; }
 
-        .ln-mobile-mark { display: flex; justify-content: center; margin-bottom: 28px; }
+        /* --- MOBILE BRANDING --- */
+        .ln-mobile-mark {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            gap: 8px; /* Jarak antara logo dan teks */
+        }
         .ln-mobile-mark img { height: 30px; }
+        
+        /* Teks "By Mangata..." di mobile */
+        .ln-mobile-by {
+            font-size: 11px;
+            font-weight: 500;
+            color: #8B96A9;
+            letter-spacing: 0.02em;
+        }
+        .ln-mobile-by b { color: #14213A; font-weight: 600; }
+
         @media (min-width: 1024px) { .ln-mobile-mark { display: none; } }
 
         .ln-eyebrow { font-size: 13px; color: #8B96A9; margin-bottom: 6px; }
@@ -130,6 +164,7 @@
 
         .ln-field { margin-top: 22px; }
         .ln-field label { display: block; font-size: 12.5px; color: #5B6577; margin-bottom: 8px; }
+        
         .ln-field input {
             width: 100%;
             border: none;
@@ -154,18 +189,21 @@
             letter-spacing: 0.01em;
             border-radius: 8px;
             border: none;
+            cursor: pointer;
             transition: background 0.15s ease;
         }
         .ln-submit:hover { background: #1C8FC4; }
         .ln-submit:focus-visible { outline: 2px solid #1C8FC4; outline-offset: 2px; }
 
-        .ln-login-link { display: block; text-align: center; margin-top: 18px; font-size: 13px; color: #8B96A9; }
+        .ln-login-link { display: block; text-align: center; margin-top: 18px; font-size: 13px; color: #8B96A9; text-decoration: none; }
         .ln-login-link:hover { color: #14213A; }
+
+        .error-text { color: #D04A4A; font-size: 12px; margin-top: 4px; display: block; }
     </style>
 </head>
 <body>
     <div class="ln-shell">
-        {{-- Left: brand panel --}}
+        {{-- Left: brand panel (Desktop Only) --}}
         <div class="ln-panel">
             <div>
                 <div class="ln-brand-wrap">
@@ -181,7 +219,6 @@
                 </p>
             </div>
 
-            {{-- Fitur Teks Saja (Ikon Dihapus) --}}
             <div class="ln-features">
                 <div class="ln-feature">
                     <div class="txt">
@@ -206,11 +243,13 @@
             <div class="ln-foot">© {{ date('Y') }} Mangata Nusantara Teknologi. All rights reserved.</div>
         </div>
 
-        {{-- Right: form --}}
+        {{-- Right: form (Mobile & Desktop) --}}
         <div class="ln-form-col">
             <div class="ln-form-inner">
+                {{-- Mobile Branding (Logo + Text) --}}
                 <div class="ln-mobile-mark">
                     <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                    <div class="ln-mobile-by">by <b>Mangata Nusantara Teknologi</b></div>
                 </div>
 
                 <p class="ln-eyebrow">Mulai dalam hitungan menit</p>
@@ -221,32 +260,39 @@
 
                     <div class="ln-field">
                         <label for="name">Nama</label>
-                        <x-text-input id="name" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" />
+                        @if($errors->has('name'))
+                            <span class="error-text">{{ $errors->first('name') }}</span>
+                        @endif
                     </div>
 
                     <div class="ln-field">
                         <label for="email">Email</label>
-                        <x-text-input id="email" type="email" name="email" :value="old('email')" required autocomplete="username" />
-                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username" />
+                        @if($errors->has('email'))
+                            <span class="error-text">{{ $errors->first('email') }}</span>
+                        @endif
                     </div>
 
                     <div class="ln-field">
                         <label for="password">Password</label>
-                        <x-text-input id="password" type="password" name="password" required autocomplete="new-password" />
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                        <input id="password" type="password" name="password" required autocomplete="new-password" />
+                        @if($errors->has('password'))
+                            <span class="error-text">{{ $errors->first('password') }}</span>
+                        @endif
                     </div>
 
-                    {{-- TAMBAHKAN KOLOM KONFIRMASI PASSWORD DI SINI --}}
                     <div class="ln-field">
                         <label for="password_confirmation">Konfirmasi Password</label>
-                        <x-text-input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" />
-                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                        <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" />
+                        @if($errors->has('password_confirmation'))
+                            <span class="error-text">{{ $errors->first('password_confirmation') }}</span>
+                        @endif
                     </div>
 
                     <div style="margin-top: 24px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px;">
                         <input type="checkbox" name="terms" id="terms" required 
-                               style="width: 18px !important; height: 18px !important; min-width: 18px !important; margin-top: 3px; cursor: pointer; appearance: auto; -webkit-appearance: checkbox; accent-color: #1C8FC4;">
+                               style="width: 18px; height: 18px; min-width: 18px; margin-top: 3px; cursor: pointer; accent-color: #1C8FC4;">
                         
                         <label for="terms" style="font-size: 13px; line-height: 1.5; color: #5B6577; cursor: pointer; user-select: none;">
                             Saya menyetujui 
@@ -255,6 +301,9 @@
                             <a href="{{ route('legal.show', 'dpa') }}" target="_blank" style="color: #1C8FC4; text-decoration: underline;">Perjanjian Pengolahan Data</a>.
                         </label>
                     </div>
+                    @if($errors->has('terms'))
+                        <span class="error-text" style="margin-bottom: 10px;">{{ $errors->first('terms') }}</span>
+                    @endif
                     
                     <button type="submit" class="ln-submit">Daftar</button>
 

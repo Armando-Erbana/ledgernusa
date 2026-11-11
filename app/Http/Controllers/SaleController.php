@@ -9,17 +9,20 @@ use App\Models\Sale;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf; 
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SaleController extends Controller
 {
     public function index(Request $request)
     {
         $query = Sale::with('customer')->latest('date')->latest('id');
+        
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
         }
+        
         $sales = $query->paginate(20)->withQueryString();
+        
         return view('sales.index', compact('sales'));
     }
 
@@ -27,21 +30,32 @@ class SaleController extends Controller
     {
         $customers = Customer::orderBy('name')->get();
         $revenueAccounts = Account::where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
-        $nextNumber = 'INV-' . date('Ym') . '-' . str_pad(Sale::where('company_id', session('company_id'))->count() + 1, 4, '0', STR_PAD_LEFT);
+        
+        $prefix = 'INV-' . date('Ym') . '-';
+        $latestSale = Sale::where('company_id', session('company_id'))
+            ->where('invoice_number', 'like', $prefix . '%')
+            ->orderBy('invoice_number', 'desc')
+            ->first();
+
+        if ($latestSale) {
+            $lastNumber = (int) substr($latestSale->invoice_number, -4);
+            $nextNumber = $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $nextNumber = $prefix . '0001';
+        }
+
         return view('sales.create', compact('customers', 'revenueAccounts', 'nextNumber'));
     }
 
     public function store(Request $request)
     {
-        // 1. BUANG BARIS KOSONG
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['account_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
+        
         $request->merge(['items' => array_values($items)]);
 
-        // 2. VALIDASI
         $data = $request->validate([
-            'invoice_number' => 'required|string|max:50',
             'customer_id' => 'nullable|exists:customers,id',
             'date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:date',
@@ -69,15 +83,31 @@ class SaleController extends Controller
         foreach ($data['items'] as $i) {
             $subtotal += ($i['qty'] * $i['price']) - ($i['discount'] ?? 0);
         }
+        
         $discount = $data['discount'] ?? 0;
         $tax = $data['tax'] ?? 0;
         $total = $subtotal - $discount + $tax;
 
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
+            $prefix = 'INV-' . date('Ym') . '-';
+            
+            $latestSale = Sale::where('company_id', session('company_id'))
+                ->where('invoice_number', 'like', $prefix . '%')
+                ->orderBy('invoice_number', 'desc')
+                ->lockForUpdate()
+                ->first();
+
+            if ($latestSale) {
+                $lastNumber = (int) substr($latestSale->invoice_number, -4);
+                $invoiceNumber = $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $invoiceNumber = $prefix . '0001';
+            }
+
             $sale = Sale::create([
                 'company_id' => session('company_id'),
                 'branch_id'  => session('branch_id'),
-                'invoice_number' => $data['invoice_number'],
+                'invoice_number' => $invoiceNumber,
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
                 'due_date' => $data['due_date'] ?? null,
@@ -121,8 +151,8 @@ class SaleController extends Controller
                         [
                             'date' => $data['date'],
                             'type' => 'out',
-                            'reference' => $data['invoice_number'],
-                            'description' => 'Penjualan ' . $data['invoice_number'],
+                            'reference' => $invoiceNumber,
+                            'description' => 'Penjualan ' . $invoiceNumber,
                             'source_type' => 'sale',
                             'source_id' => $sale->id,
                         ]
@@ -146,9 +176,12 @@ class SaleController extends Controller
     public function edit(Sale $sale)
     {
         if ($sale->status !== 'draft' && $sale->status !== 'unpaid') abort(403);
+        
         $customers = Customer::orderBy('name')->get();
         $revenueAccounts = Account::where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
+        
         $sale->load('items');
+        
         return view('sales.edit', compact('sale', 'customers', 'revenueAccounts'));
     }
 
@@ -156,13 +189,12 @@ class SaleController extends Controller
     {
         if ($sale->status === 'paid') abort(403);
 
-        // 1. BUANG BARIS KOSONG
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['account_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
+        
         $request->merge(['items' => array_values($items)]);
 
-        // 2. VALIDASI
         $data = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'date' => 'required|date',
@@ -186,6 +218,7 @@ class SaleController extends Controller
         foreach ($data['items'] as $i) {
             $subtotal += ($i['qty'] * $i['price']) - ($i['discount'] ?? 0);
         }
+        
         $discount = $data['discount'] ?? 0;
         $tax = $data['tax'] ?? 0;
         $total = $subtotal - $discount + $tax;
@@ -219,6 +252,7 @@ class SaleController extends Controller
                 $sale->journal->entries()->delete();
                 $sale->journal->delete();
             }
+            
             $sale->items()->delete();
 
             $sale->update([
@@ -310,25 +344,20 @@ class SaleController extends Controller
                 $sale->journal->entries()->delete();
                 $sale->journal->delete();
             }
+            
             $sale->items()->delete();
             $sale->delete();
         });
 
         return redirect()->route('sales.index')->with('success', 'Invoice dihapus.');
-    } // <-- Tambahkan kurung kurawal penutup destroy yang sempat hilang di sini
+    }
 
     public function exportPdf(Sale $sale)
     {
-        // Ambil data relasi yang dibutuhkan
         $sale->load(['customer', 'items.account', 'items.product', 'company']);
-
-        // Load view khusus PDF dan passing data sale
         $pdf = Pdf::loadView('pdf.invoice', compact('sale'));
-
-        // Atur ukuran kertas (A4) dan orientasi (Portrait)
         $pdf->setPaper('A4', 'portrait');
-
-        // Download file dengan nama Invoice-INV-xxxx.pdf
+        
         return $pdf->download('Invoice-' . $sale->invoice_number . '.pdf');
     }
 }

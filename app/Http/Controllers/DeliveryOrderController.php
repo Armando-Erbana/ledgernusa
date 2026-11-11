@@ -1,165 +1,188 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\DeliveryOrder;
-use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Models\Warehouse;
+use App\Models\Sale;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DeliveryOrderController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $query = DeliveryOrder::with('customer', 'salesOrder')->latest('date')->latest('id');
-        if ($request->filled('status')) $query->where('status', $request->status);
-        $dos = $query->paginate(20)->withQueryString();
+        $dos = DeliveryOrder::with('salesOrder.customer')->latest('date')->latest('id')->paginate(20);
         return view('delivery-orders.index', compact('dos'));
     }
 
     public function create(Request $request)
     {
-        $soId = $request->get('so');
-        $so = $soId ? SalesOrder::with('items.product', 'customer')->findOrFail($soId) : null;
+        $soId = $request->query('so_id');
+        $so = null;
 
-        // SO yang belum selesai dikirim
-        $availableSOs = SalesOrder::whereIn('status', ['confirmed', 'partial_delivered'])
-            ->with('customer')
-            ->orderBy('date', 'desc')
+        if ($soId) {
+            $so = SalesOrder::with(['customer', 'items.product', 'items.warehouse'])
+                ->where('status', 'confirmed')
+                ->findOrFail($soId);
+        }
+
+        $confirmedSOs = SalesOrder::where('status', 'confirmed')
+            ->doesntHave('deliveryOrders')
+            ->orWhereHas('deliveryOrders', function($q) {
+                $q->where('status', 'draft');
+            })
             ->get();
 
-        $nextNumber = 'DO-' . date('Ym') . '-' . str_pad(DeliveryOrder::where('company_id', session('company_id'))->count() + 1, 4, '0', STR_PAD_LEFT);
+        $warehouses = Warehouse::where('company_id', session('company_id'))->get();
+        
+        $prefix = 'DO-' . date('Ym') . '-';
+        $lastDO = DeliveryOrder::where('company_id', session('company_id'))->where('do_number', 'like', $prefix.'%')->orderBy('do_number', 'desc')->first();
+        $nextNumber = $lastDO ? $prefix . str_pad((int) substr($lastDO->do_number, -4) + 1, 4, '0', STR_PAD_LEFT) : $prefix . '0001';
 
-        return view('delivery-orders.create', compact('so', 'availableSOs', 'nextNumber'));
+        return view('delivery-orders.create', compact('so', 'confirmedSOs', 'warehouses', 'nextNumber'));
     }
 
     public function store(Request $request)
     {
-        // 1. BUANG BARIS KOSONG
-        $items = array_filter($request->input('items', []), function($item) {
-            return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']);
-        });
-        $request->merge(['items' => array_values($items)]);
-
-        // 2. VALIDASI
         $data = $request->validate([
-            'do_number' => 'required|string|max:50|unique:delivery_orders,do_number',
-            'sales_order_id' => 'nullable|exists:sales_orders,id',
+            'sales_order_id' => 'required|exists:sales_orders,id',
             'date' => 'required|date',
-            'shipping_address' => 'nullable|string|max:255',
-            'driver_name' => 'nullable|string|max:255',
-            'vehicle_number' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.sales_order_item_id' => 'nullable|exists:sales_order_items,id',
-            'items.*.product_id' => 'nullable|exists:products,id',
-            'items.*.warehouse_id' => 'nullable|exists:warehouses,id',
-            'items.*.description' => 'required|string|max:255',
+            'items.*.sales_order_item_id' => 'required|exists:sales_order_items,id',
+            'items.*.warehouse_id' => 'required|exists:warehouses,id',
             'items.*.qty' => 'required|numeric|min:0.01',
-        ], [
-            'items.min' => 'Minimal harus ada 1 barang yang dikirim.',
-            'items.*.description.required' => 'Deskripsi barang pada baris item belum diisi.',
-            'items.*.qty.required' => 'Qty pada baris item belum diisi.',
         ]);
 
         DB::transaction(function () use ($data) {
-            $so = !empty($data['sales_order_id']) ? SalesOrder::find($data['sales_order_id']) : null;
+            $so = SalesOrder::findOrFail($data['sales_order_id']);
+            
+            $prefix = 'DO-' . date('Ym') . '-';
+            $lastDO = DeliveryOrder::where('company_id', session('company_id'))->where('do_number', 'like', $prefix.'%')->orderBy('do_number', 'desc')->lockForUpdate()->first();
+            $doNumber = $lastDO ? $prefix . str_pad((int) substr($lastDO->do_number, -4) + 1, 4, '0', STR_PAD_LEFT) : $prefix . '0001';
 
             $do = DeliveryOrder::create([
                 'company_id' => session('company_id'),
-                'branch_id' => session('branch_id'), // <-- Tambahkan branch_id
-                'sales_order_id' => $data['sales_order_id'] ?? null,
-                'do_number' => $data['do_number'],
-                'customer_id' => $so?->customer_id,
+                'branch_id' => session('branch_id'),
+                'sales_order_id' => $so->id,
+                'do_number' => $doNumber,
                 'date' => $data['date'],
-                'shipping_address' => $data['shipping_address'] ?? null,
-                'driver_name' => $data['driver_name'] ?? null,
-                'vehicle_number' => $data['vehicle_number'] ?? null,
-                'status' => 'draft',
+                'status' => 'delivered',
                 'notes' => $data['notes'] ?? null,
+                'created_by' => auth()->id(),
             ]);
 
+            $stockService = new StockService();
+
             foreach ($data['items'] as $item) {
+                $soItem = $so->items()->findOrFail($item['sales_order_item_id']);
+                
                 $do->items()->create([
-                    'sales_order_item_id' => $item['sales_order_item_id'] ?? null,
-                    'product_id' => $item['product_id'] ?? null,
-                    'warehouse_id' => $item['warehouse_id'] ?? null,
-                    'description' => $item['description'],
+                    'sales_order_item_id' => $soItem->id,
+                    'product_id' => $soItem->product_id,
+                    'warehouse_id' => $item['warehouse_id'],
                     'qty' => $item['qty'],
+                    'description' => $soItem->description,
                 ]);
+
+                $soItem->increment('delivered_qty', $item['qty']);
+
+                if ($soItem->product_id) {
+                    $stockService->stockOut(
+                        $soItem->product_id,
+                        $item['warehouse_id'],
+                        $item['qty'],
+                        [
+                            'date' => $data['date'],
+                            'type' => 'out',
+                            'reference' => $doNumber,
+                            'description' => 'Pengiriman Barang ' . $doNumber,
+                            'source_type' => 'delivery_order',
+                            'source_id' => $do->id,
+                        ]
+                    );
+                }
+            }
+
+            if ($so->isFullyDelivered()) {
+                $so->update(['status' => 'invoiced']);
             }
         });
 
-        return redirect()->route('delivery-orders.index')->with('success', 'DO berhasil dibuat.');
+        return redirect()->route('delivery-orders.index')->with('success', 'Surat Jalan berhasil dibuat & stok berkurang.');
     }
 
     public function show(DeliveryOrder $deliveryOrder)
     {
-        $deliveryOrder->load(['customer', 'salesOrder', 'items.product', 'items.warehouse']);
-        return view('delivery-orders.show', ['do' => $deliveryOrder]);
-    }
-
-    public function destroy(DeliveryOrder $deliveryOrder)
-    {
-        if ($deliveryOrder->status !== 'draft') return back()->with('error', 'Hanya DO draft yang bisa dihapus.');
-        $deliveryOrder->items()->delete();
-        $deliveryOrder->delete();
-        return redirect()->route('delivery-orders.index')->with('success', 'DO dihapus.');
-    }
-
-    public function deliver(DeliveryOrder $deliveryOrder, StockService $stockService)
-    {
-        if ($deliveryOrder->status === 'delivered') return back()->with('error', 'DO sudah dikirim.');
-
-        DB::transaction(function () use ($deliveryOrder, $stockService) {
-            foreach ($deliveryOrder->items as $item) {
-                if ($item->product_id && $item->warehouse_id) {
-                    $product = Product::find($item->product_id);
-                    if ($product && $product->track_stock) {
-                        $stockService->stockOut($product->id, $item->warehouse_id, $item->qty, [
-                            'date' => $deliveryOrder->date,
-                            'type' => 'out',
-                            'reference' => $deliveryOrder->do_number,
-                            'description' => 'Pengiriman ' . $deliveryOrder->do_number,
-                            'source_type' => 'delivery_order',
-                            'source_id' => $deliveryOrder->id,
-                        ]);
-                    }
-                }
-
-                if ($item->sales_order_item_id) {
-                    $soItem = \App\Models\SalesOrderItem::find($item->sales_order_item_id);
-                    if ($soItem) {
-                        $soItem->increment('delivered_qty', $item->qty);
-                    }
-                }
-            }
-
-            $deliveryOrder->update([
-                'status' => 'delivered',
-                'delivered_by' => auth()->id(),
-                'delivered_at' => now(),
-            ]);
-
-            if ($deliveryOrder->salesOrder) {
-                $so = $deliveryOrder->salesOrder->fresh();
-                $so->update(['status' => $so->isFullyDelivered() ? 'delivered' : 'partial_delivered']);
-            }
-        });
-
-        return back()->with('success', 'DO berhasil dikirim, stok berkurang.');
+        $deliveryOrder->load(['salesOrder.customer', 'items.product', 'items.warehouse']);
+        return view('delivery-orders.show', compact('deliveryOrder'));
     }
 
     public function createInvoice(DeliveryOrder $deliveryOrder)
     {
-        if ($deliveryOrder->status !== 'delivered') {
-            return back()->with('error', 'DO harus dikirim dulu sebelum dibuat invoice.');
+        if (Sale::where('delivery_order_id', $deliveryOrder->id)->exists()) {
+            return back()->with('error', 'Surat Jalan ini sudah ditagihkan sebelumnya.');
         }
 
-        $so = $deliveryOrder->salesOrder;
-        if (!$so) return back()->with('error', 'DO tidak terkait dengan SO.');
+        DB::transaction(function () use ($deliveryOrder) {
+            $prefix = 'INV-' . date('Ym') . '-';
+            $lastSale = Sale::where('company_id', session('company_id'))
+                ->where('invoice_number', 'like', $prefix . '%')
+                ->orderBy('invoice_number', 'desc')
+                ->lockForUpdate()
+                ->first();
 
-        return redirect()->route('sales.create', ['from_do' => $deliveryOrder->id]);
+            $invoiceNumber = $lastSale 
+                ? $prefix . str_pad((int) substr($lastSale->invoice_number, -4) + 1, 4, '0', STR_PAD_LEFT) 
+                : $prefix . '0001';
+
+            $subtotal = 0;
+            foreach ($deliveryOrder->items as $item) {
+                $subtotal += ($item->qty * $item->salesOrderItem->price);
+            }
+
+            $sale = Sale::create([
+                'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'),
+                'delivery_order_id' => $deliveryOrder->id,
+                'customer_id' => $deliveryOrder->salesOrder->customer_id,
+                'invoice_number' => $invoiceNumber,
+                'date' => now(),
+                'due_date' => now()->addDays(30),
+                'type' => 'credit',
+                'subtotal' => $subtotal,
+                'total' => $subtotal,
+                'status' => 'unpaid',
+                'paid_amount' => 0,
+                'notes' => 'Auto-generated from DO: ' . $deliveryOrder->do_number,
+                'created_by' => auth()->id(),
+            ]);
+
+            foreach ($deliveryOrder->items as $item) {
+                $sale->items()->create([
+                    'product_id' => $item->product_id,
+                    'description' => $item->description,
+                    'qty' => $item->qty,
+                    'price' => $item->salesOrderItem->price,
+                    'discount' => 0,
+                    'subtotal' => ($item->qty * $item->salesOrderItem->price),
+                ]);
+            }
+
+            $journal = $sale->generateJournal();
+            $sale->update(['journal_id' => $journal->id]);
+
+            $deliveryOrder->salesOrder->update(['status' => 'invoiced']);
+        });
+
+        return redirect()->route('sales.index')->with('success', 'Invoice berhasil dibuat dari Surat Jalan ' . $deliveryOrder->do_number);
+    }
+
+    public function destroy(DeliveryOrder $deliveryOrder)
+    {
+        return back()->with('error', 'Surat jalan tidak dapat dihapus. Gunakan retur jika ada kesalahan.');
     }
 }

@@ -74,7 +74,7 @@ class RegisteredUserController extends Controller
     session(['company_id' => $company->id]);
 
 
-    $proPlan = Plan::where('code', 'pro')->first() ?? Plan::first();
+    $proPlan = Plan::where('code', 'professional')->first() ?? Plan::first();
     if ($proPlan) {
     Subscription::create([
         'company_id'    => $company->id,

@@ -85,4 +85,38 @@
     </form>
 @endif
 
+@if($asset->loan_amount > 0)
+    <div class="ln-form-card mt-6 border-blue-200">
+        <h3 class="ln-section-title mb-2 text-blue-800">Sisa Utang Leasing: Rp {{ number_format($asset->loan_amount, 0, ',', '.') }}</h3>
+        <p class="text-sm text-[var(--mute)] mb-4">Gunakan form di bawah ini untuk mencatat pembayaran angsuran bulanan.</p>
+        
+        <form method="POST" action="{{ route('fixed-assets.pay-leasing', $asset->id) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            @csrf
+            <div>
+                <label class="ln-label">Tanggal Bayar</label>
+                <input type="date" name="date" class="ln-input" value="{{ date('Y-m-d') }}" required>
+            </div>
+            <div>
+                <label class="ln-label">Total Bayar (Rp)</label>
+                <input type="number" name="amount" class="ln-input" required placeholder="Contoh: 5000000">
+            </div>
+            <div>
+                <label class="ln-label">Porsi Bunga (Rp)</label>
+                <input type="number" name="interest_portion" class="ln-input" required placeholder="Contoh: 500000">
+            </div>
+            <div>
+                <label class="ln-label">Bayar Dari Akun</label>
+                <select name="cash_account_id" class="ln-select" required>
+                    @foreach($cashAccounts as $cash)
+                        <option value="{{ $cash->id }}">{{ $cash->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="md:col-span-4 mt-2">
+                <button type="submit" class="ln-btn-primary w-full md:w-auto" onclick="return confirm('Simpan pembayaran angsuran?')">Catat Pembayaran Angsuran</button>
+            </div>
+        </form>
+    </div>
+@endif
+
 @endsection

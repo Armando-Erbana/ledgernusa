@@ -7,7 +7,7 @@
         <h1 class="ln-page-title">Aset Tetap Baru</h1>
         <p class="ln-page-sub">Jurnal perolehan akan otomatis dibuat</p>
     </div>
-    <a href="{{ route('fixed-assets.index') }}" class="ln-action">← Kembali</a>
+    <a href="{{ route('fixed-assets.index') }}" class="ln-action">Kembali</a>
 </div>
 
 <form method="POST" action="{{ route('fixed-assets.store') }}" class="ln-form-card space-y-4 max-w-3xl">
@@ -75,6 +75,7 @@
     </div>
 
     <hr style="border:none; border-top:1px solid var(--ln-line); margin:12px 0;">
+    
     <div style="font-size:12.5px; color:#5B6577; font-weight:600; margin-bottom:8px;">Akun Akuntansi</div>
 
     <div>
@@ -105,6 +106,34 @@
                 <option value="{{ $a->id }}" @selected(old('expense_account_id') == $a->id)>{{ $a->code }} - {{ $a->name }}</option>
             @endforeach
         </select>
+    </div>
+
+    <div class="mt-6 border-t pt-4">
+        <h3 class="text-lg font-bold mb-4">Informasi Leasing / Cicilan (Opsional)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="ln-label">Uang Muka / DP (Rp)</label>
+                <input type="number" name="down_payment" class="ln-input" value="{{ old('down_payment', 0) }}">
+            </div>
+            <div>
+                <label class="ln-label">Sisa Utang Leasing (Rp)</label>
+                <input type="number" name="loan_amount" class="ln-input" value="{{ old('loan_amount', 0) }}">
+                <p class="text-xs text-[var(--mute)] mt-1">Isi 0 jika beli tunai.</p>
+            </div>
+            <div>
+                <label class="ln-label">Tenor (Bulan)</label>
+                <input type="number" name="tenor_months" class="ln-input" value="{{ old('tenor_months', 0) }}">
+            </div>
+            <div>
+                <label class="ln-label">Akun Utang Leasing</label>
+                <select name="liability_account_id" class="ln-select">
+                    <option value="">— Pilih Akun Utang —</option>
+                    @foreach($liabilityAccounts as $acc)
+                        <option value="{{ $acc->id }}" @selected(old('liability_account_id') == $acc->id)>{{ $acc->code }} - {{ $acc->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
     </div>
 
     <div class="ln-form-actions pt-3">

@@ -47,4 +47,13 @@ class User extends Authenticatable
     {
         return (bool) $this->is_super_admin;
     }
+
+    /**
+     * Override notifikasi reset password bawaan Laravel
+     * agar menggunakan template email LedgerNusa.
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 }

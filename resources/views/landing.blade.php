@@ -82,11 +82,10 @@
     <script type="application/ld+json">{!! json_encode($ldFaq, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 
     <style>
-        /* Dua warna: biru royal + navy dalam. Tidak ada cyan/neon, gradasi dipakai seperlunya. */
         :root {
-            --b2: #3E73F5;           /* biru royal */
-            --b1: #142B78;           /* navy dalam */
-            --accent: #2A55D6;       /* biru untuk teks (kontras aman di latar terang) */
+            --b2: #3E73F5;           
+            --b1: #142B78;           
+            --accent: #2A55D6;       
             --grad: linear-gradient(145deg, var(--b2), var(--b1));
             --grad-btn: linear-gradient(180deg, #4B7AF7, #2F5BE0);
             --ink: #0C1530; --soft: #36415C; --mute: #5B6680; --faint: #8A93A8;
@@ -114,7 +113,6 @@
         .skip:focus { top: 12px; }
         .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
 
-        /* ===== Latar: bentuk besar yang sangat pelan, bahan yang "dibiaskan" kaca ===== */
         .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: linear-gradient(180deg, #F2F5FB, #E6EBF4); pointer-events: none; }
         .bg i { position: absolute; border-radius: 50%; filter: blur(90px); will-change: transform; }
         .bg i:nth-child(1) { width: 580px; height: 580px; left: -150px; top: -170px; background: var(--b2); opacity: .30; animation: drift1 44s ease-in-out infinite alternate; }
@@ -123,7 +121,6 @@
         @keyframes drift1 { to { transform: translate(70px, 50px) scale(1.06); } }
         @keyframes drift2 { to { transform: translate(-60px, 40px) scale(1.08); } }
 
-        /* ===== Kaca (liquid glass) ===== */
         .glass {
             position: relative; border-radius: 28px;
             background: linear-gradient(180deg, rgba(255,255,255,.68), rgba(255,255,255,.38));
@@ -143,7 +140,6 @@
         }
         @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass { background: rgba(250,252,255,.96); } }
 
-        /* kilau mengikuti kursor (hanya perangkat dengan mouse) */
         .glow > * { position: relative; z-index: 1; }
         .glow::after {
             content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .4s var(--ease);
@@ -382,7 +378,7 @@
     {{-- HERO --}}
     <section class="hero">
         <div class="wrap">
-            <span class="kick up" style="--d:.05s"><i></i>Aplikasi akuntansi online untuk UMKM</span>
+            <span class="kick up" style="--d:.05s"><i></i>Aplikasi akuntansi online</span>
             <h1 class="h1 up" style="--d:.12s">Pembukuan bisnis yang rapi, <em>tanpa input ganda.</em></h1>
             <p class="lead up" style="--d:.2s">LedgerNusa mencatat transaksi, menjaga debit dan kredit tetap seimbang, lalu menyusun laporan keuangan, dari HP maupun komputer.</p>
 

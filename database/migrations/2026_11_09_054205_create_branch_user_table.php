@@ -14,7 +14,6 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             
-            // Mencegah user didaftarkan 2x di cabang yang sama
             $table->unique(['user_id', 'branch_id']);
         });
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\FixedAsset;
+use App\Models\Journal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,31 +32,22 @@ class FixedAssetController extends Controller
         $companyId = session('company_id');
 
         $assetAccounts = Account::where('company_id', $companyId)
-            ->where('type', 'asset')
-            ->where('is_cash', false)
-            ->where('is_bank', false)
-            ->where('is_active', true)
-            ->orderBy('code')
-            ->get();
+            ->where('type', 'asset')->where('is_cash', false)->where('is_bank', false)
+            ->where('is_active', true)->orderBy('code')->get();
 
         $depreciationAccounts = Account::where('company_id', $companyId)
-            ->where('type', 'asset')
-            ->where('name', 'like', '%akumulasi%')
-            ->where('is_active', true)
-            ->orderBy('code')
-            ->get();
+            ->where('type', 'asset')->where('name', 'like', '%akumulasi%')
+            ->where('is_active', true)->orderBy('code')->get();
 
-        if ($depreciationAccounts->isEmpty()) {
-            $depreciationAccounts = $assetAccounts;
-        }
+        if ($depreciationAccounts->isEmpty()) $depreciationAccounts = $assetAccounts;
 
         $expenseAccounts = Account::where('company_id', $companyId)
-            ->where('type', 'expense')
-            ->where('is_active', true)
-            ->orderBy('code')
-            ->get();
+            ->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
 
-        return view('fixed-assets.create', compact('assetAccounts', 'depreciationAccounts', 'expenseAccounts'));
+        $liabilityAccounts = Account::where('company_id', $companyId)
+            ->where('type', 'liability')->where('is_active', true)->orderBy('code')->get();
+
+        return view('fixed-assets.create', compact('assetAccounts', 'depreciationAccounts', 'expenseAccounts', 'liabilityAccounts'));
     }
 
     public function store(Request $request)
@@ -74,11 +66,18 @@ class FixedAssetController extends Controller
             'residual_value' => 'nullable|numeric|min:0',
             'useful_life_months' => 'required|integer|min:1|max:600',
             'depreciation_method' => 'required|in:straight_line,double_declining,sum_of_years',
+            // Validasi Leasing
+            'down_payment' => 'nullable|numeric|min:0',
+            'loan_amount' => 'nullable|numeric|min:0',
+            'tenor_months' => 'nullable|integer|min:0',
+            'liability_account_id' => 'nullable|exists:accounts,id',
         ]);
 
         $data['company_id'] = session('company_id');
         $data['created_by'] = auth()->id();
         $data['residual_value'] = $data['residual_value'] ?? 0;
+        $data['down_payment'] = $data['down_payment'] ?? 0;
+        $data['loan_amount'] = $data['loan_amount'] ?? 0;
         $data['book_value'] = $data['purchase_cost'];
         $data['accumulated_depreciation'] = 0;
 
@@ -94,7 +93,12 @@ class FixedAssetController extends Controller
     public function show(FixedAsset $fixedAsset)
     {
         $fixedAsset->load(['assetAccount', 'depreciationAccount', 'expenseAccount', 'journal.entries.account', 'depreciations.journal']);
-        return view('fixed-assets.show', ['asset' => $fixedAsset]);
+        
+        // Ambil akun kas untuk opsi bayar angsuran
+        $cashAccounts = Account::where('company_id', session('company_id'))
+            ->where(function($q){ $q->where('is_cash', true)->orWhere('is_bank', true); })->get();
+
+        return view('fixed-assets.show', ['asset' => $fixedAsset, 'cashAccounts' => $cashAccounts]);
     }
 
     public function edit(FixedAsset $fixedAsset)
@@ -102,23 +106,25 @@ class FixedAssetController extends Controller
         $companyId = session('company_id');
 
         $assetAccounts = Account::where('company_id', $companyId)
-            ->where('type', 'asset')->where('is_cash', false)->where('is_bank', false)
-            ->orderBy('code')->get();
+            ->where('type', 'asset')->where('is_cash', false)->where('is_bank', false)->orderBy('code')->get();
 
         $depreciationAccounts = Account::where('company_id', $companyId)
-            ->where('type', 'asset')->where('name', 'like', '%akumulasi%')
-            ->orderBy('code')->get();
+            ->where('type', 'asset')->where('name', 'like', '%akumulasi%')->orderBy('code')->get();
 
         if ($depreciationAccounts->isEmpty()) $depreciationAccounts = $assetAccounts;
 
         $expenseAccounts = Account::where('company_id', $companyId)
             ->where('type', 'expense')->orderBy('code')->get();
+            
+        $liabilityAccounts = Account::where('company_id', $companyId)
+            ->where('type', 'liability')->orderBy('code')->get();
 
         return view('fixed-assets.edit', [
             'asset' => $fixedAsset,
             'assetAccounts' => $assetAccounts,
             'depreciationAccounts' => $depreciationAccounts,
             'expenseAccounts' => $expenseAccounts,
+            'liabilityAccounts' => $liabilityAccounts,
         ]);
     }
 
@@ -138,6 +144,10 @@ class FixedAssetController extends Controller
             'residual_value' => 'nullable|numeric|min:0',
             'useful_life_months' => 'required|integer|min:1|max:600',
             'depreciation_method' => 'required|in:straight_line,double_declining,sum_of_years',
+            'down_payment' => 'nullable|numeric|min:0',
+            'loan_amount' => 'nullable|numeric|min:0',
+            'tenor_months' => 'nullable|integer|min:0',
+            'liability_account_id' => 'nullable|exists:accounts,id',
         ]);
 
         if ($fixedAsset->depreciations()->exists() && $data['purchase_cost'] != $fixedAsset->purchase_cost) {
@@ -173,7 +183,7 @@ class FixedAssetController extends Controller
         ]);
 
         DB::transaction(function () use ($fixedAsset, $data) {
-            $journal = \App\Models\Journal::create([
+            $journal = Journal::create([
                 'company_id' => $fixedAsset->company_id,
                 'date' => $data['disposed_at'],
                 'reference' => 'DSP-' . ($fixedAsset->code ?: $fixedAsset->id),
@@ -224,5 +234,70 @@ class FixedAssetController extends Controller
         });
 
         return redirect()->route('fixed-assets.index')->with('success', 'Aset dilepas.');
+    }
+
+    public function payLeasing(Request $request, FixedAsset $fixedAsset)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'amount' => 'required|numeric|min:1',
+            'interest_portion' => 'required|numeric|min:0',
+            'cash_account_id' => 'required|exists:accounts,id',
+        ]);
+
+        if ($request->amount > $fixedAsset->loan_amount) {
+            return back()->with('error', 'Nominal pembayaran melebihi sisa utang leasing.');
+        }
+
+        DB::transaction(function () use ($request, $fixedAsset) {
+            $principalPortion = $request->amount - $request->interest_portion;
+
+            $journal = Journal::create([
+                'company_id' => session('company_id'),
+                'branch_id' => session('branch_id'),
+                'date' => $request->date,
+                'reference' => 'LEASE-' . $fixedAsset->id,
+                'description' => 'Angsuran Leasing Aset: ' . $fixedAsset->name,
+                'status' => 'posted',
+                'created_by' => auth()->id(),
+            ]);
+
+            // Debit: Kurangi Utang
+            $journal->entries()->create([
+                'account_id' => $fixedAsset->liability_account_id,
+                'debit' => $principalPortion,
+                'credit' => 0,
+                'description' => 'Pelunasan Pokok Leasing',
+            ]);
+
+            // Debit: Beban Bunga
+            if ($request->interest_portion > 0) {
+                $interestAccount = Account::where('company_id', session('company_id'))
+                    ->where('type', 'expense')->where('name', 'like', '%bunga%')->first() 
+                    ?? Account::where('company_id', session('company_id'))->where('type', 'expense')->first();
+                
+                if ($interestAccount) {
+                    $journal->entries()->create([
+                        'account_id' => $interestAccount->id,
+                        'debit' => $request->interest_portion,
+                        'credit' => 0,
+                        'description' => 'Beban Bunga Leasing',
+                    ]);
+                }
+            }
+
+            // Kredit: Kas
+            $journal->entries()->create([
+                'account_id' => $request->cash_account_id,
+                'debit' => 0,
+                'credit' => $request->amount,
+                'description' => 'Pembayaran Angsuran Leasing',
+            ]);
+
+            // Kurangi Sisa Pinjaman
+            $fixedAsset->decrement('loan_amount', $principalPortion);
+        });
+
+        return back()->with('success', 'Angsuran leasing berhasil dibayar & jurnal tercatat.');
     }
 }

@@ -137,8 +137,25 @@
 
         .ln-form-inner { width: 100%; max-width: 380px; }
 
-        .ln-mobile-mark { display: flex; justify-content: center; margin-bottom: 28px; }
+        /* --- MOBILE BRANDING (Logo + Text) --- */
+        .ln-mobile-mark {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            gap: 8px;
+        }
         .ln-mobile-mark img { height: 30px; }
+        
+        .ln-mobile-by {
+            font-size: 11px;
+            font-weight: 500;
+            color: #8B96A9;
+            letter-spacing: 0.02em;
+        }
+        .ln-mobile-by b { color: #14213A; font-weight: 600; }
+
         @media (min-width: 1024px) { .ln-mobile-mark { display: none; } }
 
         .ln-eyebrow { font-size: 13px; color: #8B96A9; margin-bottom: 6px; }
@@ -214,7 +231,7 @@
 </head>
 <body>
     <div class="ln-shell">
-        {{-- Left: brand / ledger panel --}}
+        {{-- Left: brand / ledger panel (Desktop only) --}}
         <div class="ln-panel">
             <div>
                 <div class="ln-brand-wrap">
@@ -255,11 +272,13 @@
             <div class="ln-foot">© {{ date('Y') }} Mangata Nusantara Teknologi. All rights reserved.</div>
         </div>
 
-        {{-- Right: form --}}
+        {{-- Right: form (Mobile & Desktop) --}}
         <div class="ln-form-col">
             <div class="ln-form-inner">
+                {{-- Mobile Branding (Logo + Text) --}}
                 <div class="ln-mobile-mark">
                     <img src="{{ asset('images/logo_akutansi_ledger_nusa-removebg-preview.png') }}" alt="LedgerNusa">
+                    <div class="ln-mobile-by">by <b>Mangata Nusantara Teknologi</b></div>
                 </div>
 
                 <p class="ln-eyebrow">Selamat datang kembali</p>

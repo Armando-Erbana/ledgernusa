@@ -18,6 +18,7 @@ class FixedAsset extends Model
         'purchase_date', 'purchase_cost', 'residual_value', 'useful_life_months',
         'depreciation_method', 'accumulated_depreciation', 'book_value',
         'last_depreciation_date', 'status', 'disposed_at', 'disposal_value', 'created_by',
+        'down_payment', 'loan_amount', 'tenor_months', 'interest_rate', 'liability_account_id'
     ];
 
     protected $casts = [
@@ -29,12 +30,16 @@ class FixedAsset extends Model
         'accumulated_depreciation' => 'decimal:2',
         'book_value' => 'decimal:2',
         'disposal_value' => 'decimal:2',
+        'down_payment' => 'decimal:2',
+        'loan_amount' => 'decimal:2',
+        'interest_rate' => 'decimal:2',
     ];
 
     public function company() { return $this->belongsTo(Company::class); }
     public function assetAccount() { return $this->belongsTo(Account::class, 'asset_account_id'); }
     public function depreciationAccount() { return $this->belongsTo(Account::class, 'depreciation_account_id'); }
     public function expenseAccount() { return $this->belongsTo(Account::class, 'expense_account_id'); }
+    public function liabilityAccount() { return $this->belongsTo(Account::class, 'liability_account_id'); }
     public function journal() { return $this->belongsTo(Journal::class); }
     public function depreciations() { return $this->hasMany(AssetDepreciation::class); }
 
@@ -76,20 +81,47 @@ class FixedAsset extends Model
             ->orderBy('code')
             ->first();
 
-        $journal->entries()->createMany([
+        $entries = [
             [
                 'account_id' => $this->asset_account_id,
                 'debit' => $this->purchase_cost,
                 'credit' => 0,
                 'description' => 'Perolehan ' . $this->name,
-            ],
-            [
-                'account_id' => $cashAccount?->id ?? $this->asset_account_id,
+            ]
+        ];
+
+        // Jika ada DP, Kredit Kas
+        if ($this->down_payment > 0 && $cashAccount) {
+            $entries[] = [
+                'account_id' => $cashAccount->id,
                 'debit' => 0,
-                'credit' => $this->purchase_cost,
-                'description' => 'Pembayaran ' . $this->name,
-            ],
-        ]);
+                'credit' => $this->down_payment,
+                'description' => 'DP Pembelian ' . $this->name,
+            ];
+        }
+
+        // Jika ada Sisa Leasing, Kredit Utang
+        if ($this->loan_amount > 0 && $this->liability_account_id) {
+            $entries[] = [
+                'account_id' => $this->liability_account_id,
+                'debit' => 0,
+                'credit' => $this->loan_amount,
+                'description' => 'Utang Leasing ' . $this->name,
+            ];
+        } else {
+            // Jika tidak ada Leasing (Beli Cash), maka sisanya masuk ke Kas
+            $sisaCash = $this->purchase_cost - $this->down_payment;
+            if ($sisaCash > 0 && $cashAccount) {
+                $entries[] = [
+                    'account_id' => $cashAccount->id,
+                    'debit' => 0,
+                    'credit' => $sisaCash,
+                    'description' => 'Pelunasan Tunai ' . $this->name,
+                ];
+            }
+        }
+
+        $journal->entries()->createMany($entries);
 
         return $journal;
     }
