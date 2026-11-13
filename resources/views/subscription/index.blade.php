@@ -199,25 +199,6 @@
             </div>
         </div>
 
-        <h3 style="margin-top:22px">Atau Transfer Bank</h3>
-        <p class="note">Transfer ke salah satu rekening berikut:</p>
-        <div class="dz-banks">
-            <div class="dz-bank">
-                <span class="nm">Bank Jago</span>
-                <span class="no">1234567890</span>
-                <span class="an">a/n Mangata Nusantara Teknologi</span>
-                <button type="button" class="dz-copy" onclick="copyNo(this, '1234567890')">Salin</button>
-            </div>
-            <div class="dz-bank">
-                <span class="nm">BCA</span>
-                <span class="no">9876543210</span>
-                <span class="an">a/n Mangata Nusantara Teknologi</span>
-                <button type="button" class="dz-copy" onclick="copyNo(this, '9876543210')">Salin</button>
-            </div>
-        </div>
-        <p class="foot">Setelah bayar (QRIS atau transfer), upload bukti di form di bawah. Verifikasi maksimal 1×24 jam.</p>
-    </div>
-
     <h2 class="dz-sec">Pilih Paket</h2>
     @if($plans->isEmpty())
         <div class="dz-glass dz-empty">Belum ada paket tersedia.</div>
