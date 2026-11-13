@@ -15,7 +15,7 @@
         <div class="ln-table-card">
             <table class="ln-table">
                 <thead>
-                    <tr><th>Nama</th><th>Email</th><th>Role</th><th class="center">Aksi</th></tr>
+                    <tr><th>Nama</th><th>Email</th><th>Role</th><th>Jabatan</th><th class="center">Aksi</th></tr>
                 </thead>
                 <tbody>
                 @forelse($users as $u)
@@ -23,6 +23,11 @@
                         <td>{{ $u->name }}</td>
                         <td>{{ $u->email }}</td>
                         <td><span class="ln-badge {{ $u->pivot->role === 'owner' ? 'posted' : 'draft' }}">{{ ucfirst($u->pivot->role) }}</span></td>
+                        <td>
+                            @foreach($u->positions as $pos)
+                                <span class="text-xs bg-gray-100 px-2 py-1 rounded">{{ $pos->name }}</span>
+                            @endforeach
+                        </td>
                         <td class="center">
                             @if($u->id !== auth()->id())
                                 <form method="POST" action="{{ route('users.destroy', $u) }}" class="inline" onsubmit="return confirm('Hapus user ini dari perusahaan?')">
@@ -35,7 +40,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="empty">Belum ada user</td></tr>
+                    <tr><td colspan="5" class="empty">Belum ada user</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -57,7 +62,6 @@
             <div>
                 <label class="ln-label">Password * (Minimal 6 Karakter)</label>
                 <input type="text" name="password" value="{{ old('password') }}" required class="ln-input" placeholder="Ketikkan password">
-                <p class="text-xs text-[var(--mute)] mt-1">Beri tahu password ini ke user agar mereka bisa login.</p>
             </div>
             <div>
                 <label class="ln-label">Role *</label>
@@ -66,6 +70,17 @@
                     <option value="admin" @selected(old('role') == 'admin')>Admin</option>
                 </select>
             </div>
+
+            @if($isPro && $positions->count() > 0)
+            <div>
+                <label class="ln-label">Jabatan (Bisa pilih lebih dari 1)</label>
+                <select name="position_ids[]" multiple class="ln-select h-24">
+                    @foreach($positions as $pos)
+                        <option value="{{ $pos->id }}">{{ $pos->division->name }} - {{ $pos->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
 
             @if($isPro && $branches->count() > 0)
             <div class="pt-2 border-t border-[var(--hair)] mt-2">

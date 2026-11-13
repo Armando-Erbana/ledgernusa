@@ -15,6 +15,8 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboard;
 use App\Http\Controllers\SuperAdmin\PaymentProofController;
 use App\Http\Controllers\SuperAdmin\TenantController as SuperAdminTenant;
+use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PurchaseOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -58,6 +60,9 @@ Route::middleware(['auth', 'active.company'])->group(function () {
 
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
+
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
 });
 
 Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->group(function () {
@@ -149,6 +154,16 @@ Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->
 
             Route::resource('purchase-orders', \App\Http\Controllers\PurchaseOrderController::class);
             Route::post('/purchase-orders/{purchaseOrder}/confirm', [\App\Http\Controllers\PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+            Route::post('/purchase-orders/{purchaseOrder}/approve', [\App\Http\Controllers\PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
+            Route::post('/purchase-orders/{purchaseOrder}/revision', [\App\Http\Controllers\PurchaseOrderController::class, 'revision'])->name('purchase-orders.revision');
+
+            Route::get('/settings/organization', [OrganizationController::class, 'index'])->name('organization.index');
+            Route::post('/settings/organization/division', [OrganizationController::class, 'storeDivision'])->name('organization.division');
+            Route::post('/settings/organization/position', [OrganizationController::class, 'storePosition'])->name('organization.position');
+            Route::post('/settings/organization/rule', [OrganizationController::class, 'storeRule'])->name('organization.rule');
+            Route::delete('/settings/organization/division/{division}', [OrganizationController::class, 'destroyDivision'])->name('organization.division.destroy');
+            Route::delete('/settings/organization/position/{position}', [OrganizationController::class, 'destroyPosition'])->name('organization.position.destroy');
+            Route::delete('/settings/organization/rule/{rule}', [OrganizationController::class, 'destroyRule'])->name('organization.rule.destroy');
 
             Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->except(['edit', 'update']);
             Route::post('/goods-receipts/{goodsReceipt}/receive', [\App\Http\Controllers\GoodsReceiptController::class, 'receive'])->name('goods-receipts.receive');

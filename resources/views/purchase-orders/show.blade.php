@@ -203,7 +203,107 @@
             </div>
         </div>
     @endif
+        <div class="ln-right">
 
+            @if($activeCompany && $allCompanies->count() > 0)
+                <div class="ln-company-wrap" id="companyDropdown">
+                    <button type="button" class="ln-company" onclick="document.getElementById('companyDropdown').classList.toggle('is-open')" title="Ganti perusahaan">
+                        <span>{{ $activeCompany->name }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="ln-company-menu">
+                        @foreach($allCompanies as $co)
+                            @php $isLocked = in_array($co->id, $lockedIds, true); @endphp
+                            @if($co->id == $activeCompany->id)
+                                <div class="ln-company-item active">
+                                    <span>{{ $co->name }}</span>
+                                    <span style="font-size:10px;color:var(--ok);font-weight:700;">Aktif</span>
+                                </div>
+                            @elseif($isLocked)
+                                <a href="{{ route('subscription.index') }}" class="ln-company-item locked" title="Upgrade ke Pro untuk mengakses company ini">
+                                    <span>{{ $co->name }}</span>
+                                    <span style="font-size:11px;">🔒</span>
+                                </a>
+                            @else
+                                <a href="{{ route('companies.switch', $co->id) }}" class="ln-company-item">
+                                    <span>{{ $co->name }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                        <div class="ln-company-divider"></div>
+                        <a href="{{ route('companies.index') }}" class="ln-company-item" style="font-size:12px;color:var(--mute);">
+                            <span>Kelola Company</span>
+                        </a>
+                    </div>
+                </div>
+            @elseif($activeCompany)
+                <a href="{{ route('companies.index') }}" class="ln-company" title="Kelola company">
+                    <span>{{ $activeCompany->name }}</span>
+                </a>
+            @endif
+
+            <div class="relative" id="notifWrapper">
+                <button class="ln-hlink relative" onclick="toggleNotif()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span id="notifBadge" class="absolute top-0 right-0 hidden bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">0</span>
+                </button>
+                <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50">
+                    <div class="p-4 border-b font-bold text-sm">Notifikasi</div>
+                    <div id="notifList" class="max-h-64 overflow-y-auto p-2 text-sm text-gray-600">
+                    </div>
+                </div>
+            </div>
+
+            @if($showBranchDropdown)
+                <div class="ln-branch-wrap" id="branchDropdown">
+                    <button type="button" class="ln-branch-btn" onclick="document.getElementById('branchDropdown').classList.toggle('is-open')">
+                        <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        {{ $activeBranch ? Str::limit($activeBranch->name, 15) : 'Konsolidasi' }}
+                    </button>
+                    <div class="ln-branch-menu">
+                        @if(!$isStaff)
+                            <a href="{{ route('branches.switch', 0) }}" class="ln-branch-item {{ !session('branch_id') ? 'active' : '' }}">
+                                <span>Semua Cabang (Konsolidasi)</span>
+                            </a>
+                            <div class="ln-branch-divider"></div>
+                        @endif
+
+                        @foreach($branches as $b)
+                            <a href="{{ route('branches.switch', $b) }}" class="ln-branch-item {{ $activeBranch && $activeBranch->id == $b->id ? 'active' : '' }}">
+                                <span>{{ $b->name }}</span>
+                                @if($b->is_main)
+                                    <span style="font-size: 10px; opacity: .6;">Pusat</span>
+                                @endif
+                            </a>
+                        @endforeach
+
+                        @if(!$isStaff)
+                            <div class="ln-branch-divider"></div>
+                            <a href="{{ route('branches.index') }}" class="ln-branch-item" style="color: var(--mute); font-size: 12px;">
+                                Kelola Cabang...
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            @elseif($isPro && $branches->count() === 1)
+                <div class="ln-branch-btn" style="cursor: default; background: transparent; border: none; color: var(--soft);">
+                    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    {{ $branches->first()->name }}
+                </div>
+            @endif
+
+            @if(auth()->user()->isSuperAdmin())
+                <a href="{{ route('super-admin.dashboard') }}" class="ln-hlink">Admin</a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="ln-hlogout">Logout</button>
+            </form>
+        </div>
 </div>
 
 @endsection

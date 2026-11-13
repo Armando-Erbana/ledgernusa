@@ -30,7 +30,7 @@
     $currentPlanCode = 'starter';
 
     if ($activeSub) {
-    if ($activeSub->status === 'trial' && $activeSub->trial_ends_at && $activeSub->trial_ends_at >= now()) {
+        if ($activeSub->status === 'trial' && $activeSub->trial_ends_at && $activeSub->trial_ends_at >= now()) {
             $isTrial = true;
             $trialDaysLeft = (int) ceil(now()->diffInDays($activeSub->trial_ends_at, false));
         }
@@ -112,6 +112,7 @@
         'Sistem' => array_filter([
             ($isOwner || $isAdmin) ? ['Kelola User', 'users.index', 'users.*'] : null,
             ($isOwner || $isAdmin) ? ['Setting',     'companies.index',   'companies.*'] : null,
+            ($isOwner || $isAdmin) && $isPro ? ['Struktur & Approval', 'organization.index', 'organization.*'] : null,
             ['Panduan',         'help.index',                    'help.*'],
             ['Pusat Bantuan',   'support.index',                 'support.*'],
             ['Profil',          'profile.edit',                  'profile.*'],
@@ -686,6 +687,20 @@
                 </a>
             @endif
 
+            <div class="relative" id="notifWrapper">
+                <button class="ln-hlink relative" onclick="toggleNotif()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span id="notifBadge" class="absolute top-0 right-0 hidden bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">0</span>
+                </button>
+                <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50">
+                    <div class="p-4 border-b font-bold text-sm">Notifikasi</div>
+                    <div id="notifList" class="max-h-64 overflow-y-auto p-2 text-sm text-gray-600">
+                    </div>
+                </div>
+            </div>
+
             @if($showBranchDropdown)
                 <div class="ln-branch-wrap" id="branchDropdown">
                     <button type="button" class="ln-branch-btn" onclick="document.getElementById('branchDropdown').classList.toggle('is-open')">
@@ -1071,6 +1086,33 @@ setTimeout(() => {
         setTimeout(() => popup.remove(), 400);
     });
 }, 5000);
+
+function toggleNotif() { document.getElementById('notifDropdown').classList.toggle('hidden'); }
+
+setInterval(fetchNotifications, 30000);
+
+function fetchNotifications() {
+    fetch("{{ route('notifications.index') }}")
+        .then(res => res.json())
+        .then(data => {
+            const badge = document.getElementById('notifBadge');
+            const list = document.getElementById('notifList');
+            
+            if (data.count > 0) {
+                badge.innerText = data.count;
+                badge.classList.remove('hidden');
+                list.innerHTML = data.items.map(item => `
+                    <a href="${item.url}" class="block p-3 hover:bg-gray-50 border-b last:border-0 rounded-lg">
+                        ${item.message}
+                    </a>
+                `).join('');
+            } else {
+                badge.classList.add('hidden');
+                list.innerHTML = '<div class="p-4 text-center text-gray-400">Tidak ada notifikasi baru</div>';
+            }
+        });
+}
+fetchNotifications();
 </script>
 
 </body>

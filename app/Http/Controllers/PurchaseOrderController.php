@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Account;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
+use App\Services\ApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,9 +20,7 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::orderBy('name')->get();
-        $expenseAccounts = Account::whereIn('type', ['expense', 'asset'])
-            ->where('is_cash', false)->where('is_bank', false)
-            ->where('is_active', true)->orderBy('code')->get();
+        $expenseAccounts = Account::whereIn('type', ['expense', 'asset'])->where('is_cash', false)->where('is_bank', false)->where('is_active', true)->orderBy('code')->get();
         $company = \App\Models\Company::find(session('company_id'));
         $nextNumber = 'PO-' . date('Ym') . '-' . str_pad(PurchaseOrder::where('company_id', session('company_id'))->count() + 1, 4, '0', STR_PAD_LEFT);
         return view('purchase-orders.create', compact('suppliers', 'expenseAccounts', 'company', 'nextNumber'));
@@ -31,13 +28,10 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
-        // 1. BUANG BARIS KOSONG
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
         $request->merge(['items' => array_values($items)]);
-
-        // 2. VALIDASI
         $data = $request->validate([
             'po_number' => 'required|string|max:50|unique:purchase_orders,po_number',
             'supplier_id' => 'nullable|exists:suppliers,id',
@@ -70,7 +64,7 @@ class PurchaseOrderController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $po = PurchaseOrder::create([
                 'company_id' => session('company_id'),
-                'branch_id' => session('branch_id'), // <-- Tambahkan branch_id
+                'branch_id' => session('branch_id'),
                 'po_number' => $data['po_number'],
                 'supplier_id' => $data['supplier_id'] ?? null,
                 'date' => $data['date'],
@@ -83,7 +77,6 @@ class PurchaseOrderController extends Controller
                 'notes' => $data['notes'] ?? null,
                 'created_by' => auth()->id(),
             ]);
-
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
                 $po->items()->create([
@@ -98,38 +91,31 @@ class PurchaseOrderController extends Controller
                 ]);
             }
         });
-
         return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil dibuat.');
     }
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['supplier', 'items.product', 'goodsReceipts']);
+        $purchaseOrder->load(['supplier', 'items.product', 'goodsReceipts', 'approvalLogs.user']);
         return view('purchase-orders.show', ['po' => $purchaseOrder]);
     }
 
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->status !== 'draft') abort(403);
+        if ($purchaseOrder->status !== 'draft' || $purchaseOrder->approval_status === 'pending') abort(403);
         $suppliers = Supplier::orderBy('name')->get();
-        $expenseAccounts = Account::whereIn('type', ['expense', 'asset'])
-            ->where('is_cash', false)->where('is_bank', false)
-            ->where('is_active', true)->orderBy('code')->get();
+        $expenseAccounts = Account::whereIn('type', ['expense', 'asset'])->where('is_cash', false)->where('is_bank', false)->where('is_active', true)->orderBy('code')->get();
         $purchaseOrder->load('items');
         return view('purchase-orders.edit', ['po' => $purchaseOrder, 'suppliers' => $suppliers, 'expenseAccounts' => $expenseAccounts]);
     }
 
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->status !== 'draft') abort(403);
-
-        // 1. BUANG BARIS KOSONG
+        if ($purchaseOrder->status !== 'draft' || $purchaseOrder->approval_status === 'pending') abort(403);
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
         $request->merge(['items' => array_values($items)]);
-
-        // 2. VALIDASI
         $data = $request->validate([
             'supplier_id' => 'nullable|exists:suppliers,id',
             'date' => 'required|date',
@@ -163,6 +149,8 @@ class PurchaseOrderController extends Controller
                 'tax' => $tax,
                 'total' => $total,
                 'notes' => $data['notes'] ?? null,
+                'approval_status' => null,
+                'current_approver_position_id' => null,
             ]);
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
@@ -178,7 +166,6 @@ class PurchaseOrderController extends Controller
                 ]);
             }
         });
-
         return redirect()->route('purchase-orders.show', $purchaseOrder)->with('success', 'PO diperbarui.');
     }
 
@@ -192,12 +179,28 @@ class PurchaseOrderController extends Controller
 
     public function confirm(PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->status !== 'draft') return back()->with('error', 'PO sudah dikonfirmasi.');
-        $purchaseOrder->update([
-            'status' => 'confirmed',
-            'confirmed_by' => auth()->id(),
-            'confirmed_at' => now(),
-        ]);
-        return back()->with('success', 'PO dikonfirmasi.');
+        if ($purchaseOrder->status !== 'draft') return back()->with('error', 'PO sudah diproses.');
+        $engine = new ApprovalService();
+        $needsApproval = $engine->checkAndSubmit($purchaseOrder, 'purchase_order', 'purchase-orders.show');
+        if ($needsApproval) return back()->with('success', 'PO diajukan. Menunggu persetujuan atasan.');
+        $purchaseOrder->update(['status' => 'confirmed', 'confirmed_by' => auth()->id(), 'confirmed_at' => now()]);
+        return back()->with('success', 'PO dikonfirmasi otomatis.');
+    }
+
+    public function approve(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        abort_if(auth()->user()->positions->pluck('id')->doesntContain($purchaseOrder->current_approver_position_id), 403);
+        $engine = new ApprovalService();
+        $engine->process($purchaseOrder, auth()->id(), 'approved');
+        return back()->with('success', 'PO berhasil disetujui.');
+    }
+
+    public function revision(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        abort_if(auth()->user()->positions->pluck('id')->doesntContain($purchaseOrder->current_approver_position_id), 403);
+        $request->validate(['notes' => 'required|string']);
+        $engine = new ApprovalService();
+        $engine->process($purchaseOrder, auth()->id(), 'revision', $request->notes);
+        return back()->with('success', 'PO dikembalikan untuk revisi.');
     }
 }

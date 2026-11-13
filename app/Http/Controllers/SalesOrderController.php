@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\SalesOrder;
 use App\Models\Warehouse;
 use App\Models\Product;
+use App\Services\ApprovalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,13 +32,11 @@ class SalesOrderController extends Controller
 
     public function store(Request $request)
     {
-        // 1. BUANG BARIS KOSONG
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
         $request->merge(['items' => array_values($items)]);
 
-        // 2. VALIDASI
         $data = $request->validate([
             'so_number' => 'required|string|max:50|unique:sales_orders,so_number',
             'customer_id' => 'nullable|exists:customers,id',
@@ -70,7 +69,7 @@ class SalesOrderController extends Controller
         DB::transaction(function () use ($data, $subtotal, $discount, $tax, $total) {
             $so = SalesOrder::create([
                 'company_id' => session('company_id'),
-                'branch_id' => session('branch_id'), // <-- Pastikan branch_id masuk
+                'branch_id' => session('branch_id'),
                 'so_number' => $data['so_number'],
                 'customer_id' => $data['customer_id'] ?? null,
                 'date' => $data['date'],
@@ -104,13 +103,13 @@ class SalesOrderController extends Controller
 
     public function show(SalesOrder $salesOrder)
     {
-        $salesOrder->load(['customer', 'items.product', 'deliveryOrders']);
+        $salesOrder->load(['customer', 'items.product', 'deliveryOrders', 'approvalLogs.user']);
         return view('sales-orders.show', ['so' => $salesOrder]);
     }
 
     public function edit(SalesOrder $salesOrder)
     {
-        if ($salesOrder->status !== 'draft') abort(403);
+        if ($salesOrder->status !== 'draft' || $salesOrder->approval_status === 'pending') abort(403);
         $customers = Customer::orderBy('name')->get();
         $revenueAccounts = Account::where('type', 'revenue')->where('is_active', true)->orderBy('code')->get();
         $salesOrder->load('items');
@@ -119,15 +118,13 @@ class SalesOrderController extends Controller
 
     public function update(Request $request, SalesOrder $salesOrder)
     {
-        if ($salesOrder->status !== 'draft') abort(403);
+        if ($salesOrder->status !== 'draft' || $salesOrder->approval_status === 'pending') abort(403);
 
-        // 1. BUANG BARIS KOSONG
         $items = array_filter($request->input('items', []), function($item) {
             return !empty($item['product_id']) || !empty($item['description']) || !empty($item['qty']) || !empty($item['price']);
         });
         $request->merge(['items' => array_values($items)]);
 
-        // 2. VALIDASI
         $data = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'date' => 'required|date',
@@ -161,6 +158,8 @@ class SalesOrderController extends Controller
                 'tax' => $tax,
                 'total' => $total,
                 'notes' => $data['notes'] ?? null,
+                'approval_status' => null,
+                'current_approver_position_id' => null,
             ]);
             foreach ($data['items'] as $item) {
                 $itemSubtotal = ($item['qty'] * $item['price']) - ($item['discount'] ?? 0);
@@ -190,12 +189,41 @@ class SalesOrderController extends Controller
 
     public function confirm(SalesOrder $salesOrder)
     {
-        if ($salesOrder->status !== 'draft') return back()->with('error', 'SO sudah dikonfirmasi.');
+        if ($salesOrder->status !== 'draft') return back()->with('error', 'SO sudah diproses.');
+        
+        $engine = new ApprovalService();
+        $needsApproval = $engine->checkAndSubmit($salesOrder, 'sales_order', 'sales-orders.show');
+
+        if ($needsApproval) {
+            return back()->with('success', 'SO diajukan. Menunggu persetujuan atasan.');
+        }
+
         $salesOrder->update([
             'status' => 'confirmed',
             'confirmed_by' => auth()->id(),
             'confirmed_at' => now(),
         ]);
-        return back()->with('success', 'SO dikonfirmasi.');
+        return back()->with('success', 'SO dikonfirmasi otomatis.');
+    }
+
+    public function approve(Request $request, SalesOrder $salesOrder)
+    {
+        abort_if(auth()->user()->positions->pluck('id')->doesntContain($salesOrder->current_approver_position_id), 403);
+        
+        $engine = new ApprovalService();
+        $engine->process($salesOrder, auth()->id(), 'approved');
+        
+        return back()->with('success', 'SO berhasil disetujui.');
+    }
+
+    public function revision(Request $request, SalesOrder $salesOrder)
+    {
+        abort_if(auth()->user()->positions->pluck('id')->doesntContain($salesOrder->current_approver_position_id), 403);
+        $request->validate(['notes' => 'required|string']);
+        
+        $engine = new ApprovalService();
+        $engine->process($salesOrder, auth()->id(), 'revision', $request->notes);
+        
+        return back()->with('success', 'SO dikembalikan untuk revisi.');
     }
 }
