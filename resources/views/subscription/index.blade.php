@@ -22,7 +22,6 @@
 .dz-sec{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:16px;font-weight:700;color:var(--ink)}
 .dz-sec::before{content:"";width:4px;height:16px;border-radius:4px;background:linear-gradient(180deg,var(--b1),var(--b2))}
 
-/* status */
 .dz-status{position:relative;overflow:hidden;padding:24px 26px;margin-bottom:18px;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
     background:linear-gradient(135deg,var(--navy),var(--b1));border-color:rgba(255,255,255,.15);
     box-shadow:0 14px 34px -12px rgba(29,78,216,.6),inset 0 1px 0 rgba(255,255,255,.22)}
@@ -40,11 +39,10 @@
 .dz-status .co{text-align:right}
 .dz-status .co b{display:block;margin-top:6px;font-size:15px;font-weight:600}
 
-/* payment info */
 .dz-pay{padding:22px 24px;margin-bottom:30px}
 .dz-pay h3{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--ink)}
 .dz-pay p.note{margin:0 0 16px;font-size:13px;color:var(--mute)}
-.dz-banks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dz-banks{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .dz-bank{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
 .dz-bank .nm{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--b1)}
 .dz-bank .no{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;font-weight:600;color:var(--ink);letter-spacing:.02em}
@@ -54,21 +52,29 @@
 .dz-copy:hover{background:rgba(29,78,216,.16)}
 .dz-pay .foot{margin:16px 0 0;font-size:12.5px;color:var(--mute)}
 
-/* ====== PILIH PAKET (Animasi Hover Diperbarui) ====== */
+.dz-qris{display:flex;gap:18px;align-items:center;padding:16px;border-radius:14px;
+    background:rgba(255,255,255,.7);border:1px solid var(--line);margin-bottom:14px}
+.dz-qris img{width:170px;height:170px;object-fit:contain;border-radius:10px;background:#fff;padding:6px;border:1px solid var(--line)}
+.dz-qris .qr-info{flex:1;min-width:0}
+.dz-qris .qr-info b{display:block;font-size:13.5px;color:var(--ink);margin-bottom:4px}
+.dz-qris .qr-info .qr-amount{margin:8px 0;font-size:20px;font-weight:700;color:var(--b1)}
+.dz-qris .qr-info small{display:block;font-size:12.5px;color:var(--mute);line-height:1.5}
+.dz-qris .qr-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.dz-qris .qr-tags span{font-size:11px;font-weight:600;color:var(--b1);background:rgba(29,78,216,.08);
+    padding:3px 9px;border-radius:999px}
+
 .dz-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;align-items:stretch}
 .dz-plan{
     padding:24px;display:flex;flex-direction:column;position:relative;
-    border:2px solid transparent; /* Border transparan agar tidak ada pergeseran layout */
+    border:2px solid transparent;
     transition:all .3s cubic-bezier(.25,.8,.25,1);
     background:rgba(255,255,255,.62);
 }
-/* Efek Hover: Stroke Biru & Naik Sedikit */
 .dz-plan:hover{
     transform:translateY(-4px);
     border-color:var(--b1);
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 18px 38px -14px rgba(29,78,216,.25), 0 0 0 1px var(--b1);
 }
-/* Kartu Professional (Populer) Statis Biru */
 .dz-plan.popular{
     border-color:var(--b1);
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 12px 32px -14px rgba(29,78,216,.2);
@@ -76,7 +82,6 @@
 .dz-plan.popular:hover{
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 18px 38px -14px rgba(29,78,216,.4), 0 0 0 1px var(--b1);
 }
-/* Kartu yang Sedang Dipilih */
 .dz-plan.on{
     border-color:var(--b1);
     background:rgba(29,78,216,.03);
@@ -84,7 +89,6 @@
 }
 .dz-plan.on:hover{ transform:translateY(-2px); }
 
-/* Label Paling Populer */
 .dz-badge-pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--b1);color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 12px;border-radius:999px;white-space:nowrap;box-shadow:0 4px 10px -2px rgba(29,78,216,.4);}
 
 .dz-pn{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--b1)}
@@ -92,7 +96,6 @@
 .dz-price{margin:12px 0 20px;font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:20px}
 .dz-price small{font-size:13px;font-weight:500;color:var(--mute)}
 
-/* Fitur List */
 .dz-features{list-style:none;padding:0;margin:0 0 24px 0;flex:1}
 .dz-features li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink);margin-bottom:12px;line-height:1.4}
 .dz-features li:last-child{margin-bottom:0}
@@ -112,7 +115,6 @@
 
 .dz-empty{padding:40px 20px;text-align:center;color:var(--mute);margin-bottom:30px}
 
-/* form */
 .dz-form{padding:26px;margin-bottom:30px}
 .dz-form h2{margin:0 0 20px;font-size:16px;font-weight:700;color:var(--ink)}
 .dz-form h2 span{color:var(--b1)}
@@ -132,7 +134,6 @@
 .dz-in[type=file]::file-selector-button:hover{background:rgba(29,78,216,.16)}
 .dz-actions{display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
 
-/* history */
 .dz-hist{padding:8px 24px}
 .dz-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
 .dz-row:last-child{border-bottom:0}
@@ -152,7 +153,7 @@
 .dz-badge.no{color:#B4233A;background:rgba(239,68,68,.1)}
 
 @media(max-width:860px){.dz-plans,.dz-banks{grid-template-columns:1fr}}
-@media(max-width:640px){.dz-grid{grid-template-columns:1fr}.dz-title{font-size:23px}.dz-status .co{text-align:left}.dz-form{padding:20px}.dz-hist{padding:4px 18px}}
+@media(max-width:640px){.dz-grid{grid-template-columns:1fr}.dz-title{font-size:23px}.dz-status .co{text-align:left}.dz-form{padding:20px}.dz-hist{padding:4px 18px}.dz-qris{flex-direction:column;align-items:flex-start}.dz-qris img{width:100%;max-width:220px;height:auto}}
 </style>
 
 <div class="dz">
@@ -161,7 +162,6 @@
     <h1 class="dz-title">Langganan</h1>
     <p class="dz-sub">Pilih paket, transfer, lalu upload bukti pembayaran</p>
 
-    {{-- STATUS --}}
     <div class="dz-glass dz-status">
         <div>
             <div class="k">Status Langganan</div>
@@ -183,34 +183,41 @@
         </div>
     </div>
 
-    {{-- INFO TRANSFER --}}
     <div class="dz-glass dz-pay">
-        <h3>Instruksi Pembayaran Manual</h3>
+        <h3>Instruksi Pembayaran</h3>
+        <p class="note">Pilih salah satu metode di bawah ini.</p>
+
+        <div class="dz-qris">
+            <img src="{{ asset('images/qris-gopay.png') }}" alt="QRIS LedgerNusa">
+            <div class="qr-info">
+                <b>Scan QRIS (GoPay, OVO, DANA, ShopeePay, LinkAja, Mobile Banking)</b>
+                <div class="qr-amount">Total: Rp {{ number_format($selectedPlan->price ?? 0, 0, ',', '.') }}</div>
+                <small>Buka aplikasi e-wallet / m-banking - Scan QRIS - masukkan nominal - konfirmasi.</small>
+                <div class="qr-tags">
+                    <span>GoPay</span><span>OVO</span><span>DANA</span><span>ShopeePay</span><span>LinkAja</span><span>BCA Mobile</span><span>Livin' Mandiri</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-top:22px">Atau Transfer Bank</h3>
         <p class="note">Transfer ke salah satu rekening berikut:</p>
         <div class="dz-banks">
             <div class="dz-bank">
-                <span class="nm">BCA</span>
+                <span class="nm">Bank Jago</span>
                 <span class="no">1234567890</span>
-                <span class="an">a/n PT LedgerNusa Digital</span>
+                <span class="an">a/n Mangata Nusantara Teknologi</span>
                 <button type="button" class="dz-copy" onclick="copyNo(this, '1234567890')">Salin</button>
             </div>
             <div class="dz-bank">
-                <span class="nm">Mandiri</span>
+                <span class="nm">BCA</span>
                 <span class="no">9876543210</span>
-                <span class="an">a/n PT LedgerNusa Digital</span>
+                <span class="an">a/n Mangata Nusantara Teknologi</span>
                 <button type="button" class="dz-copy" onclick="copyNo(this, '9876543210')">Salin</button>
             </div>
-            <div class="dz-bank">
-                <span class="nm">BRI</span>
-                <span class="no">5555666677</span>
-                <span class="an">a/n PT LedgerNusa Digital</span>
-                <button type="button" class="dz-copy" onclick="copyNo(this, '5555666677')">Salin</button>
-            </div>
         </div>
-        <p class="foot">Setelah transfer, upload bukti di form di bawah. Verifikasi maksimal 1x24 jam.</p>
+        <p class="foot">Setelah bayar (QRIS atau transfer), upload bukti di form di bawah. Verifikasi maksimal 1×24 jam.</p>
     </div>
 
-    {{-- PILIH PAKET --}}
     <h2 class="dz-sec">Pilih Paket</h2>
     @if($plans->isEmpty())
         <div class="dz-glass dz-empty">Belum ada paket tersedia.</div>
@@ -219,7 +226,7 @@
             @foreach($plans as $plan)
                 @php 
                     $isSelected = $selectedPlanId == $plan->id; 
-                    $planCode = strtolower($plan->code ?? $plan->name); // Deteksi paket
+                    $planCode = strtolower($plan->code ?? $plan->name);
                     $isPro = str_contains($planCode, 'pro');
                 @endphp
                 
@@ -237,7 +244,6 @@
                         <small> / {{ $plan->duration_days ?? 30 }} hari</small>
                     </div>
 
-                    {{-- Daftar Fitur Dinamis --}}
                     <ul class="dz-features">
                         @if(str_contains($planCode, 'starter'))
                             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Pengguna (Owner)</li>
@@ -269,11 +275,10 @@
         </div>
     @endif
 
-    {{-- FORM UPLOAD BUKTI --}}
     @php $selectedPlan = $selectedPlanId ? $plans->firstWhere('id', $selectedPlanId) : null; @endphp
     @if($selectedPlan)
         <div class="dz-glass dz-form">
-            <h2>Upload Bukti Transfer — <span>{{ $selectedPlan->name }}</span></h2>
+            <h2>Upload Bukti Bayar — <span>{{ $selectedPlan->name }}</span></h2>
 
             <form method="POST" action="{{ route('subscription.upload-proof') }}" enctype="multipart/form-data">
                 @csrf
@@ -328,7 +333,6 @@
         </div>
     @endif
 
-    {{-- RIWAYAT BUKTI --}}
     @if($proofs->isNotEmpty())
         <h2 class="dz-sec">Riwayat Upload Bukti</h2>
         <div class="dz-glass dz-hist">
