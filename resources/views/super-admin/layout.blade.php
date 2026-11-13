@@ -10,11 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     @php
-        /*
-         * Daftar menu sidebar. Item hanya tampil kalau route-nya ada (Route::has),
-         * jadi aman: tambah route baru -> menu otomatis muncul, tanpa error kalau belum dibuat.
-         * 'match' = pola route untuk status aktif.
-         */
         $saMenu = [
             'Utama' => [
                 ['Dashboard',       'super-admin.dashboard',              'super-admin.dashboard',        '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'],
@@ -24,6 +19,9 @@
                 ['Bukti Transfer',  'super-admin.payment-proofs.index',   'super-admin.payment-proofs.*', '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/>'],
                 ['Paket',           'super-admin.plans.index',            'super-admin.plans.*',          '<path d="M12 3 3 7.5 12 12l9-4.5L12 3z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/>'],
                 ['Invoice',         'super-admin.invoices.index',         'super-admin.invoices.*',       '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/>'],
+            ],
+            'Layanan' => [
+                ['Pusat Bantuan (CS)', 'super-admin.support-tickets.index', 'super-admin.support-tickets.*', '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'],
             ],
             'Sistem' => [
                 ['Pengguna',        'super-admin.users.index',            'super-admin.users.*',          '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>'],
@@ -55,7 +53,6 @@
         h1, h2, h3, .display { font-family: 'Outfit', sans-serif; letter-spacing: -0.01em; }
         a { -webkit-tap-highlight-color: transparent; }
 
-        /* ============ SIDEBAR ============ */
         .sa-layout { display: flex; min-height: 100vh; }
         .sa-sidebar {
             position: fixed; z-index: 50; top: 12px; left: 12px; bottom: 12px; width: var(--side-w);
@@ -115,7 +112,6 @@
 
         .sa-main { flex: 1; min-width: 0; margin-left: calc(var(--side-w) + 24px); padding: 32px 36px 48px; max-width: 1360px; }
 
-        /* ============ MOBILE ============ */
         .sa-mobile-nav {
             display: none; position: sticky; top: 0; z-index: 40; align-items: center; justify-content: space-between; gap: 12px;
             padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
@@ -137,14 +133,12 @@
             .sa-main { margin-left: 0; padding: 20px 16px 40px; }
         }
 
-        /* ============ ALERT ============ */
         .sa-alert { display: flex; gap: 10px; align-items: flex-start; border-radius: 14px; padding: 13px 16px; font-size: 13.5px; margin-bottom: 20px; border: 1px solid; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         .sa-alert::before { content: ""; flex: none; width: 7px; height: 7px; margin-top: 7px; border-radius: 50%; background: currentColor; }
         .sa-alert ul { margin: 0; padding-left: 16px; }
         .sa-alert-success { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.28); color: #0B6B50; }
         .sa-alert-error { background: rgba(239,68,68,.09); border-color: rgba(239,68,68,.28); color: #A0233A; }
 
-        /* ============ KOMPONEN sa-* (kompatibel dgn halaman lama) ============ */
         .sa-head { margin-bottom: 26px; }
         .sa-title { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); margin: 0; }
         .sa-sub { font-size: 13.5px; color: var(--mute); margin: 4px 0 0; }
@@ -204,7 +198,6 @@
 </head>
 <body>
 
-{{-- Top bar mobile --}}
 <div class="sa-mobile-nav">
     <div class="m-brand"><span class="sa-logo">N</span>Super Admin</div>
     <button type="button" class="sa-burger" onclick="saNav(true)" aria-label="Buka menu">
@@ -239,8 +232,6 @@
         </nav>
 
         <div class="sa-side-foot">
-            @if(Route::has('dashboard'))
-            @endif
             <div class="sa-me">
                 <span class="sa-me-av">{{ $saInitial }}</span>
                 <div class="sa-me-t">

@@ -21,8 +21,7 @@ Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : view('landing');
 });
 
-Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])
-    ->name('invitations.accept');
+Route::get('/invitations/{token}', [\App\Http\Controllers\InvitationController::class, 'accept'])->name('invitations.accept');
 
 Route::get('/legal/{page}', [\App\Http\Controllers\LegalController::class, 'show'])->name('legal.show');
 
@@ -51,7 +50,12 @@ Route::middleware(['auth', 'active.company'])->group(function () {
     Route::delete('/invitations/{invitation}', [\App\Http\Controllers\InvitationController::class, 'destroy'])->name('invitations.destroy');
 
     Route::resource('users', \App\Http\Controllers\UserManagementController::class)->only(['index', 'store', 'destroy']);
+    
     Route::get('/help', [\App\Http\Controllers\HelpController::class, 'index'])->name('help.index');
+    
+    Route::get('/support', [\App\Http\Controllers\SupportController::class, 'index'])->name('support.index');
+    Route::post('/support', [\App\Http\Controllers\SupportController::class, 'store'])->name('support.store');
+
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/audit-logs/{auditLog}', [\App\Http\Controllers\AuditLogController::class, 'show'])->name('audit-logs.show');
 });
@@ -106,7 +110,7 @@ Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->
         Route::post('/closing', [\App\Http\Controllers\ClosingController::class, 'store'])->name('closing.store');
         Route::post('/journals/{journal}/post', [JournalController::class, 'post'])->name('journals.post');
 
-            Route::prefix('reports')->name('reports.')->group(function () {
+        Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
             Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');
@@ -211,6 +215,10 @@ Route::middleware(['auth', 'super.admin'])->prefix('super-admin')->name('super-a
     Route::post('/tenants/{tenant}/change-plan', [SuperAdminTenant::class, 'changePlan'])->name('tenants.change-plan');
     Route::post('/tenants/{tenant}/suspend', [SuperAdminTenant::class, 'suspend'])->name('tenants.suspend');
     Route::post('/tenants/{tenant}/reactivate', [SuperAdminTenant::class, 'reactivate'])->name('tenants.reactivate');
+
+    Route::get('/support-tickets', [\App\Http\Controllers\SuperAdmin\SupportTicketController::class, 'index'])->name('support-tickets.index');
+    Route::get('/support-tickets/{ticket}', [\App\Http\Controllers\SuperAdmin\SupportTicketController::class, 'show'])->name('support-tickets.show');
+    Route::post('/support-tickets/{ticket}/reply', [\App\Http\Controllers\SuperAdmin\SupportTicketController::class, 'reply'])->name('support-tickets.reply');
 
     Route::prefix('payment-proofs')->name('payment-proofs.')->group(function () {
         Route::get('/', [PaymentProofController::class, 'index'])->name('index');
