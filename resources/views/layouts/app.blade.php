@@ -101,6 +101,7 @@
         ]),
         'Akuntansi' => array_filter([
             !$isStaff ? ['Akun (COA)',  'accounts.index',        'accounts.*'] : null,
+            !$isStaff ? ['Tutup Buku',  'closing.index',         'closing.*'] : null,
             $isPro && !$isStaff ? ['Aset Tetap', 'fixed-assets.index', 'fixed-assets.*'] : null,
             $isPro && !$isStaff ? ['Pajak',      'tax.index',    'tax.*'] : null,
             ['Kontak',          'contacts.index',                'contacts.*'],
@@ -466,11 +467,25 @@
         .ln-balance-ok { font-size: 13px; font-weight: 600; color: #1E7A4C; }
         .ln-balance-bad { font-size: 13px; font-weight: 600; color: #B5362F; }
 
-        .ln-ai-fab { position: fixed; z-index: 90; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 14px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 0; cursor: pointer; color: #fff; background: linear-gradient(180deg, #2563EB, #1E3A8A); box-shadow: 0 12px 26px -8px rgba(37,99,235,.5), inset 0 1px 0 rgba(255,255,255,.2); transition: transform .18s; }
+        .ln-fab-label {
+            position: absolute; right: 100%; margin-right: 12px;
+            background: #1D1D1F; color: #fff;
+            padding: 6px 12px; border-radius: 8px;
+            font-size: 12px; font-weight: 600; white-space: nowrap;
+            opacity: 0; pointer-events: none; transform: translateX(10px); transition: 0.2s;
+        }
+        .ln-wa-fab:hover .ln-fab-label, .ln-ai-fab:hover .ln-fab-label { opacity: 1; transform: translateX(0); }
+
+        .ln-ai-fab { position: fixed; z-index: 90; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 14px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 0; cursor: pointer; color: #fff; background: linear-gradient(180deg, #2563EB, #1E3A8A); box-shadow: 0 12px 26px -8px rgba(37,99,235,.5), inset 0 1px 0 rgba(255,255,255,.2); transition: transform .18s; }
         .ln-ai-fab:hover { transform: translateY(-2px) scale(1.04); }
         .ln-ai-fab:active { transform: scale(.96); }
-        .ln-ai-fab svg { width: 20px; height: 20px; }
-        .ln-ai-panel { position: fixed; z-index: 89; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 70px + env(safe-area-inset-bottom, 0px)); width: 380px; max-width: calc(100vw - 28px); height: 540px; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px); display: none; flex-direction: column; overflow: hidden; border-radius: 24px; background: rgba(255,255,255,.94); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px); border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l); }
+        .ln-ai-fab svg { width: 22px; height: 22px; }
+        
+        .ln-wa-fab { position: fixed; z-index: 91; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 70px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; background: #25D366; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .ln-wa-fab:hover { transform: translateY(-2px) scale(1.04); }
+        .ln-wa-fab:active { transform: scale(.96); }
+
+        .ln-ai-panel { position: fixed; z-index: 89; right: 14px; bottom: calc(var(--dock-h) + var(--dock-gap) + 126px + env(safe-area-inset-bottom, 0px)); width: 380px; max-width: calc(100vw - 28px); height: 540px; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px); display: none; flex-direction: column; overflow: hidden; border-radius: 24px; background: rgba(255,255,255,.94); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px); border: 1px solid rgba(255,255,255,.8); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px var(--hair), var(--shadow-l); }
         .ln-ai-panel.open { display: flex; animation: ln-pop .24s ease; }
         @keyframes ln-pop { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
         .ln-ai-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--hair); }
@@ -505,6 +520,7 @@
 
         @media (min-width: 640px) {
             .ln-ai-fab { right: 24px; }
+            .ln-wa-fab { right: 24px; }
             .ln-ai-panel { right: 24px; }
         }
 
@@ -560,7 +576,10 @@
             .ln-tabbar.more-open .ln-ti.active:not(.open) .lbl { max-width: 100%; max-height: 0; margin: 0; opacity: 0; }
 
             .ln-ai-fab { right: 12px; bottom: calc(var(--dock-h) + var(--dock-gap) + 12px + env(safe-area-inset-bottom, 0px)); }
-            .ln-ai-panel { right: 10px; bottom: calc(var(--dock-h) + var(--dock-gap) + 68px + env(safe-area-inset-bottom, 0px)); }
+            .ln-wa-fab { right: 12px; bottom: calc(var(--dock-h) + var(--dock-gap) + 66px + env(safe-area-inset-bottom, 0px)); }
+            .ln-ai-panel { right: 10px; bottom: calc(var(--dock-h) + var(--dock-gap) + 122px + env(safe-area-inset-bottom, 0px)); }
+
+            .ln-fab-label { display: none; }
 
             .ln-sheet {
                 position: fixed; inset: 0; z-index: 1000;
@@ -822,9 +841,22 @@
     </div>
 </div>
 
-<button type="button" class="ln-ai-fab" onclick="lnAiToggle()" title="Tanya Asisten LedgerNusa" aria-label="Buka Asisten AI">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+<a href="https://wa.me/6281231702869?text=Halo%20CS%20LedgerNusa,%20saya%20butuh%20bantuan." target="_blank" class="ln-wa-fab" title="Hubungi CS via WhatsApp">
+    <span class="ln-fab-label">Chat CS (WhatsApp)</span>
+    <svg viewBox="0 0 448 512" width="24" height="24" fill="currentColor">
+        <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+    </svg>
+</a>
+
+<button type="button" class="ln-ai-fab" onclick="lnAiToggle()" title="Buka Asisten Akuntansi AI">
+    <span class="ln-fab-label">Asisten Akuntansi AI</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 8V4H8"/>
+        <rect width="16" height="12" x="4" y="8" rx="2"/>
+        <path d="M2 14h2"/>
+        <path d="M20 14h2"/>
+        <path d="M15 13v2"/>
+        <path d="M9 13v2"/>
     </svg>
 </button>
 

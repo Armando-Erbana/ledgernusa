@@ -102,9 +102,11 @@ Route::middleware(['auth', 'active.company', 'subscription', 'branch.access'])->
     Route::middleware(['role:owner,admin'])->group(function () {
 
         Route::resource('journals', JournalController::class);
+        Route::get('/closing', [\App\Http\Controllers\ClosingController::class, 'index'])->name('closing.index');
+        Route::post('/closing', [\App\Http\Controllers\ClosingController::class, 'store'])->name('closing.store');
         Route::post('/journals/{journal}/post', [JournalController::class, 'post'])->name('journals.post');
 
-        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportController::class, 'index'])->name('index');
             Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
             Route::get('/trial-balance', [ReportController::class, 'trialBalance'])->name('trial-balance');

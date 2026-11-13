@@ -15,7 +15,7 @@ class AiAssistantController extends Controller
             'conversation_id' => 'nullable|string',
         ]);
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = env('GROQ_API_KEY');
         $userMessage = $request->input('message');
 
         $systemPrompt = "Anda adalah Asisten LedgerNusa, aplikasi akuntansi online Indonesia. "
@@ -24,34 +24,36 @@ class AiAssistantController extends Controller
                       . "Fokus pada topik akuntansi, jurnal, laporan keuangan, dan cara penggunaan aplikasi LedgerNusa.";
 
         try {
-            // Gunakan Http::retry() untuk mencoba ulang 3x jika Google Error 503/429
-            $response = Http::withoutVerifying()
+            $response = Http::withToken($apiKey)->withoutVerifying()
                 ->retry(3, 1000, function ($exception) {
-                    return $exception instanceof \Illuminate\Http\Client\RequestException && in_array($exception->response->status(), [503, 429, 500]);
+                    return $exception instanceof \Illuminate\Http\Client\RequestException 
+                        && in_array($exception->response->status(), [500, 502, 503, 504]);
                 })
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={$apiKey}", [
-                    'system_instruction' => [
-                        'parts' => [['text' => $systemPrompt]]
+                ->timeout(20)
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => 'openai/gpt-oss-120b',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $userMessage],
                     ],
-                    'contents' => [
-                        [
-                            'role' => 'user',
-                            'parts' => [['text' => $userMessage]]
-                        ]
-                    ],
-                    'generationConfig' => [
-                        'temperature' => 0.7,
-                        'maxOutputTokens' => 2048, // <-- Dinaikkan agar teks tidak terpotong
-                    ]
+                    'temperature' => 0.7,
+                    'max_tokens' => 4096,
                 ]);
 
+            if ($response->status() === 429) {
+                return response()->json([
+                    'answer' => "Mohon maaf, kuota asisten AI gratis sedang penuh. Silakan tunggu 1 menit dan coba lagi ya. 🙏",
+                    'conversation_id' => $request->conversation_id ?? uniqid(),
+                ]);
+            }
+
             if ($response->failed()) {
-                Log::error('Gemini API Error: ' . $response->body());
-                throw new \Exception('API Error');
+                Log::error('Groq API Error: ' . $response->body());
+                throw new \Exception('Gagal menghubungi AI Groq: ' . $response->status());
             }
 
             $data = $response->json();
-            $answer = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Maaf, saya tidak bisa memproses jawaban saat ini.';
+            $answer = $data['choices'][0]['message']['content'] ?? 'Maaf, saya tidak bisa memproses jawaban saat ini.';
 
             return response()->json([
                 'answer' => trim($answer),
@@ -59,11 +61,11 @@ class AiAssistantController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('AI Chat Error: ' . $e->getMessage());
+            Log::error('AI Chat Exception: ' . $e->getMessage());
             
-            // Tampilkan pesan yang ramah, BUKAN error 503
             return response()->json([
                 'answer' => "Maaf, asisten AI sedang sibuk atau kehilangan koneksi. Silakan coba beberapa saat lagi ya.",
+                'conversation_id' => $request->conversation_id ?? uniqid(),
             ]);
         }
     }

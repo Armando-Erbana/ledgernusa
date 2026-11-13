@@ -10,7 +10,7 @@ class Company extends Model
     protected $fillable = [
     'name',
     'business_type',              
-    'onboarding_completed_at',    
+    'onboarding_completed_at', 'closed_until',    
     'npwp', 'is_pkp', 'ppn_rate', 'ppn_included', 'tax_office',
     'efin', 'currency', 'fiscal_year_start', 'address', 'logo', 'status',
     ];
@@ -20,7 +20,8 @@ class Company extends Model
     'ppn_included' => 'boolean',
     'ppn_rate' => 'decimal:2',
     'fiscal_year_start' => 'date',
-    'onboarding_completed_at' => 'datetime',   
+    'onboarding_completed_at' => 'datetime',
+    'closed_until' => 'date',   
     ];
 
     public function isJasa(): bool

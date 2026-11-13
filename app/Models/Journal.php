@@ -28,4 +28,21 @@ class Journal extends Model
 
     public function totalDebit() { return $this->entries->sum('debit'); }
     public function totalCredit() { return $this->entries->sum('credit'); }
+
+        protected static function booted()
+    {
+        static::creating(function ($journal) {
+            $company = \App\Models\Company::find($journal->company_id);
+            if ($company && $company->closed_until && $journal->date <= $company->closed_until) {
+                throw new \Exception('Transaksi ditolak: Periode buku untuk tanggal ini sudah ditutup.');
+            }
+        });
+
+        static::updating(function ($journal) {
+            $company = \App\Models\Company::find($journal->company_id);
+            if ($company && $company->closed_until && $journal->date <= $company->closed_until) {
+                throw new \Exception('Transaksi ditolak: Jurnal ini berada di periode yang sudah ditutup.');
+            }
+        });
+    }
 }
